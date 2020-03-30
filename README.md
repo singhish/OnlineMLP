@@ -18,3 +18,5 @@ Command line flags:
 - `-l`/`--layers`: The number of units in the MLP's hidden layer (providing this argument more than once will add
                    additional layers)
 - `-e`/`--epochs`: The number of epochs to spend training the model
+
+\*Note: clicking on the live plot pauses it and reports the model's current rMSE loss.
