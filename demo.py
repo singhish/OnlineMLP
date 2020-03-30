@@ -1,5 +1,5 @@
 import pandas as pd
-from onlinemlpdemo.modules.online_mlp import OnlineMLP
+from modules.online_mlp import OnlineMLP
 import matplotlib; matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 from matplotlib import style; style.use('dark_background')
