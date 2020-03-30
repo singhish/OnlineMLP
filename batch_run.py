@@ -1,22 +1,14 @@
 import argparse
+import os
 import pandas as pd
 from modules.online_mlp import OnlineMLP
-import matplotlib; matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
-from matplotlib.animation import FuncAnimation
 from sklearn.metrics import mean_squared_error
 from math import sqrt
-
-# Globals
-loss = -1
-paused = False
-timestep = 0
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Real-time MLP Training Demo')
-    parser.add_argument('-f', '--filename', type=str, default='data/Ivol_Acc_Load_3S_10STD.lvm.csv',
-                        help='Relative path of CSV file to use in .data directory.')
     parser.add_argument('-s', '--sampling-window', type=int, default=20,
                         help='The number of timesteps to use for making a prediction. (default: 20)')
     parser.add_argument('-c', '--forecast-length', type=int, default=5,
@@ -28,6 +20,8 @@ def parse_args():
                              'will add additional layers. (default: 100)')
     parser.add_argument('-e', '--epochs', type=int, default=10,
                         help='The number of epochs to spend training the model. (default: 10)')
+    parser.add_argument('-i', '--iterations', type=int, default=1500,
+                        help='The number of iterations to use on each dataset in the .data directory. (default: 1500)')
 
     return parser.parse_args()
 
@@ -46,35 +40,24 @@ Prediction Length={args.forecast_length}, Period={args.period},\nLayers={args.la
     y_axis_pred = 'Predicted Acceleration'
     y_axis_loss = 'Loss'
 
-    # Load data/initialize dataframes
-    series = pd.read_csv(args.filename)
-    series = series[['Acceleration']]
-    obs_series = pd.DataFrame(columns=[x_axis, y_axis_obs])
-    pred_series = pd.DataFrame(columns=[x_axis, y_axis_pred])
-    loss_series = pd.DataFrame(columns=[x_axis, y_axis_loss])
+    for filename in os.listdir('data'):
+        series = pd.read_csv('data/' + filename)
+        series = series[['Acceleration']]
+        obs_series = pd.DataFrame(columns=[x_axis, y_axis_obs])
+        pred_series = pd.DataFrame(columns=[x_axis, y_axis_pred])
+        loss_series = pd.DataFrame(columns=[x_axis, y_axis_loss])
 
-    # Initialize plots
-    fig, axs = plt.subplots(2, 1, constrained_layout=True)
-    fig.set_size_inches(6, 8)
+        # Initialize plots
+        fig, axs = plt.subplots(2, 1)
+        fig.set_size_inches(6, 8)
 
-    # Start online training
-    mlp = OnlineMLP(args.sampling_window, args.forecast_length, args.layers)
-    series_iter = series.itertuples()
-
-    def animate(i):
-        global loss, timestep
-        if not paused:
-            accel = next(series_iter)[1]
-
-            axs[0].clear()
-            axs[0].set_title(title_pred)
-
-            axs[1].clear()
-            axs[1].set_title(title_loss)
-
+        # Online training
+        mlp = OnlineMLP(args.sampling_window, args.forecast_length, args.layers)
+        loss = -1
+        timestep = 0
+        for row in series.head(args.iterations).itertuples():
+            accel = row[1]
             obs_series.loc[len(obs_series)] = [timestep, accel]
-            obs_series.plot(ax=axs[0], x=x_axis, y=y_axis_obs, color='silver', style='--')
-
             pred_accel = mlp.iterate_training_step(accel, args.epochs, args.period)
             if pred_accel is not None:
                 pred_series.loc[len(pred_series)] = [timestep + args.forecast_length, pred_accel]
@@ -82,29 +65,20 @@ Prediction Length={args.forecast_length}, Period={args.period},\nLayers={args.la
                 if not merged_series.empty:
                     loss = sqrt(mean_squared_error(merged_series[y_axis_obs].values, merged_series[y_axis_pred].values))
                     loss_series.loc[len(loss_series)] = [timestep, loss]
-
-            if not pred_series.empty:
-                pred_series.plot(ax=axs[0], x=x_axis, y=y_axis_pred, color='red')
-
-            if not loss_series.empty:
-                loss_series.plot(ax=axs[1], x=x_axis, y=y_axis_loss, color='magenta')
-
-            axs[0].set_xlim(xmin=0)
-            axs[1].set_xlim(xmin=0, xmax=axs[0].get_xlim()[1])
-            axs[1].set_ylim(ymin=0)
-
             timestep += 1
 
-    # If animation is clicked, pause it and print out current loss
-    def pause_ani(e):
-        global paused
-        paused ^= True
-        if paused:
-            print(loss)
+        axs[0].set_title(title_pred)
+        obs_series.plot(ax=axs[0], x=x_axis, y=y_axis_obs, color='silver', style='--')
+        pred_series.plot(ax=axs[0], x=x_axis, y=y_axis_pred, color='red')
+        axs[0].set_xlim(xmin=0)
 
-    fig.canvas.mpl_connect('button_press_event', pause_ani)
-    ani = FuncAnimation(fig, animate, interval=1)
-    plt.show()
+        axs[1].set_title(title_loss)
+        loss_series.plot(ax=axs[1], x=x_axis, y=y_axis_loss, color='magenta')
+        axs[1].set_xlim(xmin=0, xmax=axs[0].get_xlim()[1])
+        axs[1].set_ylim(ymin=0)
+
+        plt.show()
+        print(loss)
 
 
 if __name__ == '__main__':
