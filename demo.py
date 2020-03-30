@@ -36,8 +36,8 @@ def main():
     args = parse_args()
 
     # Graph labels
-    title_pred = f'Real-Time MLP Predictions\nHistory Length={args.sampling_window}, \
-Prediction Length={args.forecast_length}, Period={args.period},\nLayers={args.layers}, Epochs={args.epochs}'
+    title_pred = f'Real-Time MLP Predictions\nSampling Window={args.sampling_window}, \
+Forecast Length={args.forecast_length}, Period={args.period},\nLayers={args.layers}, Epochs={args.epochs}'
     title_loss = 'Loss (rMSE)'
 
     x_axis = 'Timestep'

@@ -30,8 +30,8 @@ def main():
     args = parse_args()
 
     # Graph labels
-    title_pred = f'Real-Time MLP Predictions\nHistory Length={args.sampling_window}, \
-Prediction Length={args.forecast_length}, Period={args.period},\nLayers={args.layers}, Epochs={args.epochs}'
+    title_pred = f'Real-Time MLP Predictions\nSampling Window={args.sampling_window}, \
+Forecast Length={args.forecast_length}, Period={args.period},\nLayers={args.layers}, Epochs={args.epochs}'
     title_loss = 'Loss (rMSE)'
 
     x_axis = 'Timestep'
@@ -41,7 +41,7 @@ Prediction Length={args.forecast_length}, Period={args.period},\nLayers={args.la
     y_axis_loss = 'Loss'
 
     for filename in os.listdir('data'):
-        series = pd.read_csv('data/' + filename)
+        series = pd.read_csv('data/Ivol_Acc_Load_3S_10STD.lvm.csv')
         series = series[['Acceleration']]
         obs_series = pd.DataFrame(columns=[x_axis, y_axis_obs])
         pred_series = pd.DataFrame(columns=[x_axis, y_axis_pred])
