@@ -1,6 +1,7 @@
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 import numpy as np
+from collections import Iterable
 
 
 class OnlineMLP:
@@ -16,8 +17,11 @@ class OnlineMLP:
         """
         # Initialize MLP model
         self._model = Sequential()
-        for units in layers:
-            self._model.add(Dense(units, activation='relu', input_dim=hist_length))
+        if isinstance(layers, Iterable):
+            for units in layers:
+                self._model.add(Dense(units, activation='relu', input_dim=hist_length))
+        else:
+            self._model.add(Dense(layers, activation='relu', input_dim=hist_length))
         self._model.add(Dense(1))
         self._model.compile(optimizer='adam', loss='mse')
 
@@ -36,10 +40,13 @@ class OnlineMLP:
         Progresses training of the MLP by one iteration.
 
         :param obs: an observation, preferably from a real-time data stream
-        :param n_epochs: the number of epochs to train the model by
-        :param period: the number of timesteps at which a prediction is made
+        :param n_epochs: the number of epochs to spend training the model
+        :param period: the gap length in timesteps between predictions
         :return: a prediction if the internal buffer has reached capacity, otherwise a None object
         """
+        if period > self._pred_length:
+            raise ValueError('Period must be greater than the prediction length!')
+
         # Add observation to buffer
         self._buffer.append(obs)
 

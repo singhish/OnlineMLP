@@ -1,3 +1,4 @@
+import argparse
 import pandas as pd
 from modules.online_mlp import OnlineMLP
 import matplotlib; matplotlib.use('TkAgg')
@@ -7,47 +8,59 @@ from matplotlib.animation import FuncAnimation
 from sklearn.metrics import mean_squared_error
 from math import sqrt
 
-# Degrees of freedom -- aim is to parameter sweep along these
-HIST_LENGTH = 20
-PRED_LENGTH = 10
-PERIOD = 1
-LAYERS = [100]
-N_EPOCHS = 10
-
-# Graph labels
-TITLE_PRED = f'Real-Time MLP Predictions\n\
-History Length={HIST_LENGTH}, \
-Forecast Length={PRED_LENGTH}, \
-Period={PERIOD},\n\
-Layers={LAYERS}, \
-Epochs={N_EPOCHS}'
-TITLE_LOSS = 'Loss (rMSE)'
-
-X_AXIS = 'Timestep'
-
-Y_AXIS_OBS = 'Observed Acceleration'
-Y_AXIS_PRED = 'Predicted Acceleration'
-Y_AXIS_LOSS = 'Loss'
-
 # Globals
 loss = -1
 paused = False
 timestep = 0
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description='Real-time MLP Training Demo')
+    parser.add_argument('-f', '--filename', type=str, default='data/Ivol_Acc_Load_3S_10STD.lvm.csv',
+                        help='Relative path of CSV file to use in .data directory.')
+    parser.add_argument('-s', '--hist-length', type=int, default=20,
+                        help='The number of past timesteps to use for making a prediction. (default: 20)')
+    parser.add_argument('-p', '--pred-length', type=int, default=5,
+                        help='The number of timesteps ahead to make a prediction at. (default: 10)')
+    parser.add_argument('-t', '--period', type=int, default=1,
+                        help='The gap length in timesteps between predictions. (default: 1)')
+    parser.add_argument('-l', '--layers', action='append', type=int, default=100,
+                        help='The number of units in the MLP\'s hidden layer. Providing this argument more than once '
+                             'will add additional layers. (default: 100)')
+    parser.add_argument('-e', '--epochs', type=int, default=10,
+                        help='The number of epochs to spend training the model. (default: 10)')
+
+    return parser.parse_args()
+
+
 def main():
-    mlp = OnlineMLP(HIST_LENGTH, PRED_LENGTH, LAYERS)
+    args = parse_args()
 
-    series = pd.read_csv('data/Ivol_Acc_Load_3S_10STD.lvm.csv')
+    # Graph labels
+    title_pred = f'Real-Time MLP Predictions\nHistory Length={args.hist_length}, Prediction Length={args.pred_length}, \
+Period={args.period},\nLayers={args.layers}, Epochs={args.epochs}'
+    title_loss = 'Loss (rMSE)'
+
+    x_axis = 'Timestep'
+
+    y_axis_obs = 'Observed Acceleration'
+    y_axis_pred = 'Predicted Acceleration'
+    y_axis_loss = 'Loss'
+
+    # Load data/initialize dataframes
+    series = pd.read_csv(args.filename)
     series = series[['Acceleration']]
+    obs_series = pd.DataFrame(columns=[x_axis, y_axis_obs])
+    pred_series = pd.DataFrame(columns=[x_axis, y_axis_pred])
+    loss_series = pd.DataFrame(columns=[x_axis, y_axis_loss])
 
-    obs_series = pd.DataFrame(columns=[X_AXIS, Y_AXIS_OBS])
-    pred_series = pd.DataFrame(columns=[X_AXIS, Y_AXIS_PRED])
-    loss_series = pd.DataFrame(columns=[X_AXIS, Y_AXIS_LOSS])
-
-    series_iter = series.itertuples()
+    # Initialize plots
     fig, axs = plt.subplots(2, 1, constrained_layout=True)
     fig.set_size_inches(6, 8)
+
+    # Start online training
+    mlp = OnlineMLP(args.hist_length, args.pred_length, args.layers)
+    series_iter = series.itertuples()
 
     def animate(i):
         global loss, timestep
@@ -55,33 +68,35 @@ def main():
             accel = next(series_iter)[1]
 
             axs[0].clear()
-            axs[0].set_title(TITLE_PRED)
+            axs[0].set_title(title_pred)
 
             axs[1].clear()
-            axs[1].set_title(TITLE_LOSS)
+            axs[1].set_title(title_loss)
 
             obs_series.loc[len(obs_series)] = [timestep, accel]
-            obs_series.plot(ax=axs[0], x=X_AXIS, y=Y_AXIS_OBS, color='silver', style='--')
+            obs_series.plot(ax=axs[0], x=x_axis, y=y_axis_obs, color='silver', style='--')
 
-            pred_accel = mlp.iterate_training_step(accel, N_EPOCHS, PERIOD)
+            pred_accel = mlp.iterate_training_step(accel, args.epochs, args.period)
             if pred_accel is not None:
-                pred_series.loc[len(pred_series)] = [timestep + PRED_LENGTH, pred_accel]
-                merged_series = pd.merge_ordered(obs_series, pred_series, on=X_AXIS, how='inner')
+                pred_series.loc[len(pred_series)] = [timestep + args.pred_length, pred_accel]
+                merged_series = pd.merge_ordered(obs_series, pred_series, on=x_axis, how='inner')
                 if not merged_series.empty:
-                    loss = sqrt(mean_squared_error(merged_series[Y_AXIS_OBS].values, merged_series[Y_AXIS_PRED].values))
+                    loss = sqrt(mean_squared_error(merged_series[y_axis_obs].values, merged_series[y_axis_pred].values))
                     loss_series.loc[len(loss_series)] = [timestep, loss]
 
             if not pred_series.empty:
-                pred_series.plot(ax=axs[0], x=X_AXIS, y=Y_AXIS_PRED, color='cyan')
+                pred_series.plot(ax=axs[0], x=x_axis, y=y_axis_pred, color='cyan')
 
             if not loss_series.empty:
-                loss_series.plot(ax=axs[1], x=X_AXIS, y=Y_AXIS_LOSS, color='yellow')
+                loss_series.plot(ax=axs[1], x=x_axis, y=y_axis_loss, color='yellow')
 
             axs[0].set_xlim(xmin=0)
             axs[1].set_xlim(xmin=0, xmax=axs[0].get_xlim()[1])
+            axs[1].set_ylim(ymin=0)
 
             timestep += 1
 
+    # If animation is clicked, pause it and print out current loss
     def pause_ani(e):
         global paused
         paused ^= True
