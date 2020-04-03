@@ -8,27 +8,21 @@ To install dependencies (preferably in something like a Venv or a Conda environm
 
 ---
 
-To run an animated, real-time demonstration of the MLP:
+To perform a benchmark run using the files in the ```data``` directory, use: 
 
-```python -m demo```
+```python -m benchmark```
 
-Command line flags:
-- `-f`/`--filename`: Relative path of CSV file to use in .data directory
-- `-s`/`--sampling-window`: The number of timesteps to use for making a prediction
-- `-c`/`--forecast-length`: The number of timesteps ahead to make a prediction at
-- `-t`/`--period`: The gap length in timesteps between predictions
-- `-l`/`--layers`: The number of units in the MLP's hidden layer (providing this argument more than once will add
-                   additional layers)
-- `-e`/`--epochs`: The number of epochs to spend training the model
+Note the data must be of `.csv` format and have two columns named `Time` and `Observation` for this script to work
+properly.
 
-\*Note: clicking on the live plot pauses it and reports the model's current rMSE loss.
+Command line options:
 
----
-
-
-To perform a batch run on each file in the ```data``` directory: 
-
-```python -m batch_run```
-
-Command line flags are the same as above, with the exception of the `-f`/`--filename` option being replaced with an
-`-i`/`--iterations` option.
+- `-l`/`--history-length`: The number of past timesteps to use for making a prediction. (default: 20)
+- `-f`/`--forecast-length`: The number of timesteps ahead to make a prediction at. (default: 5)
+- `-p`/`--prediction-period`: The gap length in timesteps between predictions. (default: 1)
+- `-u`/`--units`: The number of units in the MLP\'s hidden layer. Providing this argument more than once will add
+additional layers. (default: 100)
+- `-e`/`--epochs`: The number of epochs to spend training the model. (default: 10)
+- `-i`/`--iterations`: The number of iterations to use on each dataset in the data/ directory. (default: 10000)
+- `-t`/`--time-to-run`: The length of time in seconds to predict on. (default: 5.0)
+- `-g`/`--graphs`: Providing this argument will show a plot after each dataset processed.

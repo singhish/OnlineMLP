@@ -14,20 +14,24 @@ timestep = 0
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Real-time MLP Training Demo')
-    parser.add_argument('-f', '--filename', type=str, default='data/Ivol_Acc_Load_3S_10STD.lvm.csv',
-                        help='Relative path of CSV file to use in .data directory.')
-    parser.add_argument('-s', '--sampling-window', type=int, default=20,
+    parser = argparse.ArgumentParser(description='Real-time MLP Live Demo')
+
+    # Degrees of freedom
+    parser.add_argument('-l', '--history-length', type=int, default=20,
                         help='The number of timesteps to use for making a prediction. (default: 20)')
-    parser.add_argument('-c', '--forecast-length', type=int, default=5,
-                        help='The number of timesteps ahead to make a prediction at. (default: 10)')
-    parser.add_argument('-t', '--period', type=int, default=1,
+    parser.add_argument('-f', '--forecast-length', type=int, default=5,
+                        help='The number of timesteps ahead to make a prediction at. (default: 5)')
+    parser.add_argument('-p', '--prediction-period', type=int, default=1,
                         help='The gap length in timesteps between predictions. (default: 1)')
-    parser.add_argument('-l', '--layers', action='append', type=int, default=100,
+    parser.add_argument('-u', '--units', action='append', type=int, default=100,
                         help='The number of units in the MLP\'s hidden layer. Providing this argument more than once '
                              'will add additional layers. (default: 100)')
     parser.add_argument('-e', '--epochs', type=int, default=10,
                         help='The number of epochs to spend training the model. (default: 10)')
+
+    # Benchmark configuration
+    parser.add_argument('--filename', type=str, default='benchmark_data/1S_1STD.csv',
+                        help='Relative path of CSV file to use in .data directory.')
 
     return parser.parse_args()
 
@@ -36,8 +40,8 @@ def main():
     args = parse_args()
 
     # Graph labels
-    title_pred = f'Real-Time MLP Predictions\nSampling Window={args.sampling_window}, \
-Forecast Length={args.forecast_length}, Period={args.period},\nLayers={args.layers}, Epochs={args.epochs}'
+    title_pred = f'Real-Time MLP Predictions\nSampling Window={args.history_length}, \
+Forecast Length={args.forecast_length}, prediction_period={args.prediction_period},\nunits={args.units}, Epochs={args.epochs}'
     title_loss = 'Loss (rMSE)'
 
     x_axis = 'Timestep'
@@ -58,7 +62,7 @@ Forecast Length={args.forecast_length}, Period={args.period},\nLayers={args.laye
     fig.set_size_inches(6, 8)
 
     # Start online training
-    mlp = OnlineMLP(args.sampling_window, args.forecast_length, args.layers)
+    mlp = OnlineMLP(args.history_length, args.forecast_length, args.units)
     series_iter = series.itertuples()
 
     def animate(i):
@@ -75,7 +79,7 @@ Forecast Length={args.forecast_length}, Period={args.period},\nLayers={args.laye
             obs_series.loc[len(obs_series)] = [timestep, accel]
             obs_series.plot(ax=axs[0], x=x_axis, y=y_axis_obs, color='silver', style='--')
 
-            pred_accel = mlp.iterate_training_step(accel, args.epochs, args.period)
+            pred_accel = mlp.iterate_training_step(accel, args.epochs, args.prediction_period)
             if pred_accel is not None:
                 pred_series.loc[len(pred_series)] = [timestep + args.forecast_length, pred_accel]
                 merged_series = pd.merge_ordered(obs_series, pred_series, on=x_axis, how='inner')

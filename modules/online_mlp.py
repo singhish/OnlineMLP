@@ -28,7 +28,7 @@ class OnlineMLP:
         # Initialize buffer
         self._buffer = []
         # As the MLP's weights are updated as the data stream continues, its training batch size is 1. Hence the buffer
-        # only needs to contain enough observations for 1 training iteration.
+        # only needs to contain enough observations to reflect 1 batch.
         self._buffer_capacity = sampling_window + forecast_length
 
         # Other class constants

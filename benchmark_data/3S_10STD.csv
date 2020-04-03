@@ -1,4 +1,4 @@
-X_Value,Voltage, Force,Acceleration
+Time,Voltage,Force,Observation
 0,0.496893,0.919649,-0.013958
 0.000605,0.501371,0.902815,-0.001975
 0.001211,0.497593,0.912267,-0.00582
