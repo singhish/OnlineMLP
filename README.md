@@ -8,9 +8,9 @@ To install dependencies (preferably in something like a Venv or a Conda environm
 
 ---
 
-To perform a benchmark run using the files in the ```data``` directory, use: 
+To see a live demo of the MLP training in real-time, run: 
 
-```python -m benchmark```
+```python -m live_demo```
 
 Note the data must be of `.csv` format and have two columns named `Time` and `Observation` for this script to work
 properly.
@@ -25,4 +25,4 @@ additional layers. (default: 100)
 - `-e`/`--epochs`: The number of epochs to spend training the model. (default: 10)
 - `-i`/`--iterations`: The number of iterations to use on each dataset in the data/ directory. (default: 10000)
 - `-t`/`--time-to-run`: The length of time in seconds to predict on. (default: 5.0)
-- `-g`/`--graphs`: Providing this argument will show a plot after each dataset processed.
+- `--filename`: Relative path of CSV file to use in the data/ directory.
