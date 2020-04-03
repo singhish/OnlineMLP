@@ -43,7 +43,7 @@ Forecast Length={args.forecast_length}, Prediction Period={args.prediction_perio
 Epochs={args.epochs}'
     title_loss = 'Loss (rMSE)'
 
-    step = 'Timestep'
+    step_label = 'Timestep'
 
     x_axis = 'Time (s)'
 
@@ -52,11 +52,12 @@ Epochs={args.epochs}'
     y_axis_loss = 'Loss'
 
     for filename in os.listdir('benchmark_data'):
+        # Load dataset/initialize dataframes
         series = pd.read_csv('benchmark_data/' + filename)
         series = series[['Time', 'Observation']]
-        obs_series = pd.DataFrame(columns=[step, x_axis, y_axis_obs])
-        pred_series = pd.DataFrame(columns=[step, x_axis, y_axis_pred])
-        loss_series = pd.DataFrame(columns=[step, x_axis, y_axis_loss])
+        obs_series = pd.DataFrame(columns=[step_label, x_axis, y_axis_obs])
+        pred_series = pd.DataFrame(columns=[step_label, x_axis, y_axis_pred])
+        loss_series = pd.DataFrame(columns=[step_label, x_axis, y_axis_loss])
 
         # Initialize plots
         fig, axs = plt.subplots(2, 1, tight_layout=True)
@@ -79,7 +80,7 @@ Epochs={args.epochs}'
                 pred_series.loc[len(pred_series)] = [timestep + args.forecast_length,
                                                      time + delta * args.forecast_length,
                                                      pred_accel]
-                merged_series = pd.merge_ordered(obs_series, pred_series, on=step, how='inner')
+                merged_series = pd.merge_ordered(obs_series, pred_series, on=step_label, how='inner')
                 if not merged_series.empty:
                     loss = sqrt(mean_squared_error(merged_series[y_axis_obs].values, merged_series[y_axis_pred].values))
                     loss_series.loc[len(loss_series)] = [timestep, time, loss]
