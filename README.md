@@ -8,7 +8,7 @@ To install dependencies (preferably in something like a Venv or a Conda environm
 
 ---
 
-To perform a benchmark run using the files in the ```data``` directory, use: 
+To perform a benchmark run using the files in the ```data``` directory, run: 
 
 ```python -m benchmark```
 
@@ -26,3 +26,7 @@ additional layers. (default: 100)
 - `-i`/`--iterations`: The number of iterations to use on each dataset in the data/ directory. (default: 10000)
 - `-t`/`--time-to-run`: The length of time in seconds to predict on. (default: 5.0)
 - `-g`/`--graphs`: Providing this argument will show a plot after each dataset processed.
+
+---
+
+To run a live demo of the MLP training in real-time, checkout the `live-demo` branch.
