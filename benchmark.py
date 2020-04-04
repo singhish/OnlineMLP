@@ -26,7 +26,7 @@ def parse_args():
     # Benchmark options -- useful for local testing
     parser.add_argument('-i', '--iterations', type=int, default=10000,
                         help='The number of iterations to use on each dataset in /benchmark_data. (default: 10000)')
-    parser.add_argument('-t', '--time-to-run', type=float, default=0.1,
+    parser.add_argument('-t', '--time-to-run', type=float, default=5.0,
                         help='The length of time in seconds to predict on. (default: 5.0)')
     parser.add_argument('-g', '--graphs', action='store_true',
                         help='Providing this argument will show a plot after each dataset processed.')
@@ -43,6 +43,9 @@ def main():
     y_label_obs = 'Observed Acceleration'
     y_label_pred = 'Predicted Acceleration'
     y_label_loss = 'Loss'
+
+    # Begin CSV logging
+    print('Sinusoids,StDev,Loss')
 
     for filename in os.listdir('benchmark_data'):
         # Load dataset/initialize dataframes
@@ -83,6 +86,9 @@ def main():
             # Increment iteration count
             iteration += 1
 
+        n, sd = filename[:(len(filename) - 4)].split("_")
+        print(f'{n[:(len(n) - 1)]},{sd[:(len(sd) - 3)]},{loss}')
+
         # Plot data if arg is provided
         if args.graphs:
             fig, axs = plt.subplots(2, 1, tight_layout=True)
@@ -104,8 +110,6 @@ Epochs={args.epochs}'
             axs[1].set_ylim(ymin=0)
 
             plt.show()
-
-        print(loss)
 
 
 if __name__ == '__main__':
