@@ -1,2 +1,5 @@
-.idea
-out
+.idea/
+out/
+__pycache__/
+py_out*.out
+py_err*.err
