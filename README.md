@@ -6,8 +6,6 @@ To install dependencies (preferably in something like a Venv or a Conda environm
 
 ```pip install -r requirements.txt```
 
----
-
 To perform a benchmark run using the files in the ```data``` directory, run: 
 
 ```python -m benchmark```
@@ -28,6 +26,10 @@ provided to specify additional layers. (default: 100)
 - `-t`/`--time-to-run`: The length of time in seconds to predict on. (default: 5.0)
 - `-g`/`--graphs`: Providing this argument will show a plot after each dataset processed.
 
----
+To see a live demo of the MLP training in real-time, checkout the `live-demo` branch.
 
-To run a live demo of the MLP training in real-time, checkout the `live-demo` branch.
+To carry out a parameter sweep on an HPC cluster that supports `slurm` (like, for instance, `hyperion` at UofSC), run
+
+```sbatch sweep.sh```
+
+changing any parameter bounds by directly modifying the file as needed.
