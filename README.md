@@ -1,4 +1,6 @@
 # OnlineMLP
+![](media/demo.gif)
+
 A wrapper class for Keras-based multilayer perceptrons (MLPs) to facilitate the process of training them online (e.g.
 for making live forecasts on real-time data streams).
 
