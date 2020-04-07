@@ -25,4 +25,4 @@ additional layers. (default: 100)
 - `-e`/`--epochs`: The number of epochs to spend training the model. (default: 10)
 - `-i`/`--iterations`: The number of iterations to use on each dataset in the data/ directory. (default: 10000)
 - `-t`/`--time-to-run`: The length of time in seconds to predict on. (default: 5.0)
-- `--filename`: Relative path of CSV file to use in the data/ directory.
+- `--filename`: Relative path of CSV file to use in the `benchmark_data/` directory.
