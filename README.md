@@ -1,19 +1,15 @@
 # OnlineMLP
 ![](media/demo.gif)
 
-A wrapper class for Keras-based multilayer perceptrons (MLPs) to facilitate the process of training them online (e.g.
-for making live forecasts on real-time data streams).
+A wrapper class for Keras-based multilayer perceptrons (MLPs) for training them online (e.g. for making live forecasts on real-time data streams).
 
 To install dependencies (preferably in something like a Venv or a Conda environment):
 
 ```pip install -r requirements.txt```
 
-To perform a benchmark run using the files in the ```data``` directory, run: 
+To perform a benchmark run using the files in the ```data``` directory: 
 
 ```python -m benchmark```
-
-Note the data must be of `.csv` format and have two columns named `Time` and `Observation` for this script to work
-properly.
 
 Command line options:
 
@@ -28,10 +24,13 @@ provided to specify additional layers. (default: 100)
 - `-t`/`--time-to-run`: The length of time in seconds to predict on. (default: 5.0)
 - `-g`/`--graphs`: Providing this argument will show a plot after each dataset processed.
 
+Note the data must be of `.csv` format and have two columns named `Time` and `Observation` for this script to work
+properly.
+
 To see a live demo of the MLP training in real-time, checkout the `live-demo` branch.
 
-To carry out a parameter sweep on an HPC cluster that supports `slurm` (like, for instance, `hyperion` at UofSC), run
+To carry out a parameter sweep on an HPC cluster that supports `slurm` (like, for instance, `hyperion` at UofSC):
 
 ```sbatch sweep.sh```
 
-changing any parameter bounds by directly modifying the file as needed.
+changing any parameter bounds by directly modifying `sweep.sh` as needed.
