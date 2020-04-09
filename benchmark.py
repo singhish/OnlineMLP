@@ -17,9 +17,9 @@ def parse_args():
                         help='The number of timesteps ahead to make a prediction at. (default: 5)')
     parser.add_argument('-p', '--prediction-period', type=int, default=1,
                         help='The gap length in timesteps between predictions. (default: 1)')
-    parser.add_argument('-u', '--units', type=int, default=[100], nargs='*',
+    parser.add_argument('-u', '--units', type=int, default=[10], nargs='*',
                         help='The number of units in the MLP\'s hidden layer. A list of integers separated by spaces '
-                             'can also be provided to specify additional layers. (default: 100)')
+                             'can also be provided to specify additional layers. (default: 10)')
     parser.add_argument('-e', '--epochs', type=int, default=10,
                         help='The number of epochs to spend training the model. (default: 10)')
 
