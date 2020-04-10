@@ -1,5 +1,6 @@
 import argparse
 import os
+from shutil import rmtree
 import pandas as pd
 from modules.online_mlp import OnlineMLP
 from matplotlib import pyplot as plt
@@ -45,8 +46,14 @@ def main():
     y_label_loss = 'Loss'
 
     # Begin CSV logging
-    print('Sinusoids,StDev,Loss')
+    out_dir = os.path.join(os.getcwd(), 'out')
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
+    out_filename =\
+        f'l{args.history_length}-f{args.forecast_length}-p{args.prediction_period}-u{args.units}-e{args.epochs}.csv'
+    f = open(os.path.join(out_dir, out_filename), 'w')
 
+    print('Sinusoids,StDev,Loss', file=f)
     for filename in os.listdir('benchmark_data'):
         # Load dataset/initialize dataframes
         df = pd.read_csv('benchmark_data/' + filename)[['Time', 'Observation']]  # Original time series data
@@ -87,7 +94,7 @@ def main():
             iteration += 1
 
         n, sd = filename[:(len(filename) - 4)].split("_")
-        print(f'{n[:(len(n) - 1)]},{sd[:(len(sd) - 3)]},{loss}')
+        print(f'{n[:(len(n) - 1)]},{sd[:(len(sd) - 3)]},{loss}', file=f)
 
         # Plot data if arg is provided
         if args.graphs:
@@ -110,6 +117,8 @@ Epochs={args.epochs}'
             axs[1].set_ylim(ymin=0)
 
             plt.show()
+
+    f.close()
 
 
 if __name__ == '__main__':
