@@ -44,9 +44,7 @@ def main():
     y_label_pred = 'Predicted Acceleration'
     y_label_loss = 'Loss'
 
-    # Begin CSV logging
-    print('Sinusoids,StDev,Loss')
-
+    # Begin training
     for filename in os.listdir('benchmark_data'):
         # Load dataset/initialize dataframes
         df = pd.read_csv('benchmark_data/' + filename)[['Time', 'Observation']]  # Original time series data
@@ -87,7 +85,8 @@ def main():
             iteration += 1
 
         n, sd = filename[:(len(filename) - 4)].split("_")
-        print(f'{n[:(len(n) - 1)]},{sd[:(len(sd) - 3)]},{loss}')
+        print(f'{n[:(len(n) - 1)]},{sd[:(len(sd) - 3)]},{args.history_length},{args.forecast_length},'
+              f'{args.prediction_period},{args.units},{args.epochs},{loss}')
 
         # Plot data if arg is provided
         if args.graphs:
@@ -110,8 +109,6 @@ Epochs={args.epochs}'
             axs[1].set_ylim(ymin=0)
 
             plt.show()
-
-    f.close()
 
 
 if __name__ == '__main__':
