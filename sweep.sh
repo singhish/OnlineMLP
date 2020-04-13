@@ -4,34 +4,26 @@
 #SBATCH -o py_out%j.out
 #SBATCH -e py_err%j.err
 
-mkdir -p out
+echo 'Sinusoids,Standard Deviation,History Length,Forecast Length,Prediction Period,Units,Epochs,Loss'
 
 # forecast length
-for f in {5..150..5};
-do
-    # prediction period
-    for p in {1..20};
-    do
-        # skip invalid combinations
-        if (( p >= f ));
-        then
-            continue
-        fi
+for f in {5..150..5}; do
+  # prediction period
+  for p in {1..20}; do
+    # skip invalid combinations
+    if (( p >= f )); then
+      continue
+    fi
 
-        # history length
-        for l in {10..100..10};
-        do
-            # units
-            for u in {10..1000..100};
-            do
-                # epochs
-                for e in {25..400..25};
-                do
-                    # run python script, log output for each combination
-                    srun -n 1 -c 1 --exclusive run.sh -l $l -f $f -p $p -u $u -e $e >> \
-                            out/loss-l${l}-f${f}-p${p}-u${u}-e${e}.csv &
-                done
-            done
+    # history length
+    for l in {10..100..10}; do
+      # units
+      for u in {10..1000..10}; do
+        # epochs
+        for e in {25..400..25}; do
+          srun -n 1 -c 1 --exclusive run.sh -f $f -p $p -l $l -u $u -e $e
         done
+      done
     done
+  done
 done
