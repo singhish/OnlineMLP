@@ -5,20 +5,20 @@ import numpy as np
 
 class OnlineMLP:
 
-    def __init__(self, history_length, forecast_length, pred_period, units, epochs):
+    def __init__(self, history_length, forecast_length, delay, units, epochs):
         """
         A wrapper class for Keras-based multilayer perceptrons (MLPs) to facilitate the process of training them online
         (e.g. for making live forecasts on real-time data streams).
 
         :param history_length: the number of past timesteps to use for making a prediction
         :param forecast_length: the number of timesteps ahead to make a prediction at
-        :param pred_period: the gap length in timesteps between predictions
+        :param delay: the gap length in timesteps between predictions
         :param units: a list consisting of the number of units for there to be at each hidden layer of the MLP
         :param epochs: the number of epochs to spend training the model during each iteration
         """
-        # Enforce that prediction period must be less than or equal to forecast length
-        if pred_period > forecast_length:
-            raise ValueError('Prediction period must be less than or equal to the forecast length!')
+        # Enforce that delay must be less than or equal to forecast length
+        if delay > forecast_length:
+            raise ValueError('Delay must be less than or equal to the forecast length!')
 
         # Initialize MLP model
         self._model = Sequential()
@@ -36,7 +36,7 @@ class OnlineMLP:
         # Save training parameters
         self._history_length = history_length
         self._forecast_length = forecast_length
-        self._pred_period = pred_period
+        self._delay = delay
         self._epochs = epochs
 
     def advance_iteration(self, obs):
@@ -60,7 +60,7 @@ class OnlineMLP:
                                                   (1, self._history_length))).item()
 
             # Move buffer forward by the period
-            self._buffer = self._buffer[self._pred_period:]
+            self._buffer = self._buffer[self._delay:]
 
             return pred
 

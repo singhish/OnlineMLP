@@ -15,7 +15,7 @@ Command line options:
 
 - `-l`/`--history-length`: The number of past timesteps to use for making a prediction. (default: 20)
 - `-f`/`--forecast-length`: The number of timesteps ahead to make a prediction at. (default: 5)
-- `-p`/`--prediction-period`: The gap length in timesteps between predictions. (default: 1)
+- `-d`/`--delay`: The gap length in timesteps between predictions. (default: 1)
 - `-u`/`--units`: The number of units in the MLP\'s hidden layer. A list of integers separated by spaces can also be
 provided to specify additional layers. (default: 100)
 - `-e`/`--epochs`: The number of epochs to spend training the model. (default: 10)

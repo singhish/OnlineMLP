@@ -8,14 +8,14 @@ from math import sqrt
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Real-time MLP Benchmark')
+    parser = argparse.ArgumentParser(description='Online MLP Benchmark')
 
     # Degrees of freedom -- for parameter sweeps on HPC clusters
     parser.add_argument('-l', '--history-length', type=int, default=20,
                         help='The number of past timesteps to use for making a prediction. (default: 20)')
     parser.add_argument('-f', '--forecast-length', type=int, default=5,
                         help='The number of timesteps ahead to make a prediction at. (default: 5)')
-    parser.add_argument('-p', '--prediction-period', type=int, default=1,
+    parser.add_argument('-d', '--delay', type=int, default=1,
                         help='The gap length in timesteps between predictions. (default: 1)')
     parser.add_argument('-u', '--units', type=int, default=[10], nargs='*',
                         help='The number of units in the MLP\'s hidden layer. A list of integers separated by spaces '
@@ -53,7 +53,7 @@ def main():
         loss_df = pd.DataFrame(columns=[iter_label, x_label, y_label_loss])  # Stores MLP's loss over time
 
         # Start online training
-        mlp = OnlineMLP(args.history_length, args.forecast_length, args.prediction_period, args.units, args.epochs)
+        mlp = OnlineMLP(args.history_length, args.forecast_length, args.delay, args.units, args.epochs)
         loss = -1  # Stores the current loss of the model
         iteration = 0  # Keeps track of the current training iteration
         delta = df['Time'].values[1] - df['Time'].values[0]  # The approximate time step between observations
@@ -86,16 +86,15 @@ def main():
 
         n, sd = filename[:(len(filename) - 4)].split("_")
         print(f'{n[:(len(n) - 1)]},{sd[:(len(sd) - 3)]},{args.history_length},{args.forecast_length},'
-              f'{args.prediction_period},{args.units},{args.epochs},{loss}')
+              f'{args.delay},{args.units},{args.epochs},{loss}')
 
-        # Plot data if arg is provided
+        # Plot data if --graphs option is provided
         if args.graphs:
             fig, axs = plt.subplots(2, 1, tight_layout=True)
             fig.set_size_inches(6, 8)
 
             title_pred = f'Online MLP Training Results\nHistory Length={args.history_length}, \
-Forecast Length={args.forecast_length}, Prediction Period={args.prediction_period},\nUnits={args.units}, \
-Epochs={args.epochs}'
+Forecast Length={args.forecast_length}, Delay={args.delay},\nUnits={args.units}, Epochs={args.epochs}'
             title_loss = 'Loss (rMSE)'
 
             axs[0].set_title(title_pred)
