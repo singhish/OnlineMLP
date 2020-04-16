@@ -45,9 +45,9 @@ def main():
     y_label_loss = 'Loss'
 
     # Begin training
-    for filename in os.listdir('benchmark_data'):
+    for filename in os.listdir('data'):
         # Load dataset/initialize dataframes
-        df = pd.read_csv('benchmark_data/' + filename)[['Time', 'Observation']]  # Original time series data
+        df = pd.read_csv('data/' + filename)[['Time', 'Observation']]  # Original time series data
         obs_df = pd.DataFrame(columns=[iter_label, x_label, y_label_obs])  # Keeps track of current observations
         pred_df = pd.DataFrame(columns=[iter_label, x_label, y_label_pred])  # Keeps track of MLP's predictions
         loss_df = pd.DataFrame(columns=[iter_label, x_label, y_label_loss])  # Stores MLP's loss over time
