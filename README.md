@@ -3,7 +3,7 @@
 
 A wrapper class for Keras-based multilayer perceptrons (MLPs) for training them online (e.g. for making live forecasts on real-time data streams).
 
-To install dependencies (preferably in something like a Venv or a Conda environment):
+To install dependencies (preferably in something like a `venv` or `conda` environment):
 
 ```pip install -r requirements.txt```
 
