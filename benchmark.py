@@ -10,18 +10,18 @@ from math import sqrt
 def parse_args():
     parser = argparse.ArgumentParser(description='Online MLP Benchmark')
 
-    # Degrees of freedom -- for parameter sweeps on HPC clusters
+    # Parameters -- for grid searching on HPC clusters
     parser.add_argument('-l', '--history-length', type=int, default=20,
                         help='The number of past timesteps to use for making a prediction. (default: 20)')
     parser.add_argument('-f', '--forecast-length', type=int, default=5,
                         help='The number of timesteps ahead to make a prediction at. (default: 5)')
-    parser.add_argument('-d', '--delay', type=int, default=1,
-                        help='The gap length in timesteps between predictions. (default: 1)')
     parser.add_argument('-u', '--units', type=int, default=[10], nargs='*',
                         help='The number of units in the MLP\'s hidden layer. A list of integers separated by spaces '
                              'can also be provided to specify additional layers. (default: 10)')
     parser.add_argument('-e', '--epochs', type=int, default=10,
                         help='The number of epochs to spend training the model. (default: 10)')
+    parser.add_argument('-d', '--delay', type=int, default=1,
+                        help='The gap length in timesteps between predictions. (default: 1)')
 
     # Benchmark options -- useful for local testing
     parser.add_argument('-i', '--iterations', type=int, default=10000,
@@ -45,16 +45,16 @@ def main():
     y_label_loss = 'Loss'
 
     # Begin training
-    for filename in os.listdir('data'):
+    for file in os.listdir('data'):
         # Load dataset/initialize dataframes
-        df = pd.read_csv('data/' + filename)[['Time', 'Observation']]  # Original time series data
+        df = pd.read_csv('data/' + file)[['Time', 'Observation']]  # Original time series data
         obs_df = pd.DataFrame(columns=[iter_label, x_label, y_label_obs])  # Keeps track of current observations
         pred_df = pd.DataFrame(columns=[iter_label, x_label, y_label_pred])  # Keeps track of MLP's predictions
-        loss_df = pd.DataFrame(columns=[iter_label, x_label, y_label_loss])  # Stores MLP's loss over time
+        loss_df = pd.DataFrame(columns=[iter_label, x_label, y_label_loss])  # Stores MLP's rmse over time
 
         # Start online training
         mlp = OnlineMLP(args.history_length, args.forecast_length, args.delay, args.units, args.epochs)
-        loss = -1  # Stores the current loss of the model
+        rmse = -1  # Stores the current rmse of the model
         iteration = 0  # Keeps track of the current training iteration
         delta = df['Time'].values[1] - df['Time'].values[0]  # The approximate time step between observations
 
@@ -69,24 +69,24 @@ def main():
             # Perform a training iteration on the MLP
             pred_accel = mlp.advance_iteration(accel)
 
-            # If MLP's buffer contained enough observations to make a prediction, attempt to calculate its loss
+            # If MLP's buffer contained enough observations to make a prediction, attempt to calculate its rmse
             if pred_accel is not None:
                 pred_df.loc[len(pred_df)] = [iteration + args.forecast_length,
                                              time + delta * args.forecast_length,
                                              pred_accel]
-                # Perform inner join on obs_df and pred_df to sync up MLP's loss values
+                # Perform inner join on obs_df and pred_df to sync up MLP's rmse values
                 merged_series = pd.merge_ordered(obs_df, pred_df, on=iter_label, how='inner')
                 if not merged_series.empty:
-                    loss = sqrt(mean_squared_error(merged_series[y_label_obs].values,
+                    rmse = sqrt(mean_squared_error(merged_series[y_label_obs].values,
                                                    merged_series[y_label_pred].values))
-                    loss_df.loc[len(loss_df)] = [iteration, time, loss]
+                    loss_df.loc[len(loss_df)] = [iteration, time, rmse]
 
             # Increment iteration count
             iteration += 1
 
-        n, sd = filename[:(len(filename) - 4)].split("_")
+        n, sd = file[:(len(file) - 4)].split("_")
         print(f'{n[:(len(n) - 1)]},{sd[:(len(sd) - 3)]},{args.history_length},{args.forecast_length},'
-              f'{args.delay},{args.units},{args.epochs},{loss}')
+              f'{args.delay},{args.units},{args.epochs},{rmse}')
 
         # Plot data if --graphs option is provided
         if args.graphs:
