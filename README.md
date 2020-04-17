@@ -29,17 +29,12 @@ properly.
 
 ---
 
-To benchmark an offline MLP locally for means of comparison, run `./offline/sweep.sh`. Output will be of the format
-`offline-sweep-{CURRENT SYSTEM TIME}.csv`. Options available are the same as the first four above for the online
-benchmark.
-
----
-
 To carry out a parameter sweep on an HPC cluster that supports `slurm` (like, for instance, `hyperion` at UofSC):
 
 ```sbatch sweep.sh```
 
-changing any parameter bounds by directly modifying `sweep.sh` as needed.
+changing any parameter bounds by directly modifying `sweep.sh` as needed. To benchmark an offline MLP for means of
+comparison, run `sbatch offline-bench/sweep.sh`.
 
 ---
 
