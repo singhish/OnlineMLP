@@ -14,7 +14,7 @@ for f in {10..100..10}; do
     for u in {20..200..20}; do
       # epochs
       for e in {1..10}; do
-	(( i=i%28 )); (( i++==0 )) && wait
+        (( i=i%28 )); (( i++==0 )) && wait
         srun -n 1 -c 1 --exclusive run.sh -f $f -l $l -e $e -u $u >> offline-results.csv &
       done
     done
