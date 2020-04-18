@@ -7,9 +7,9 @@ To install dependencies (preferably in something like a `venv` or `conda` enviro
 
 ```pip install -r requirements.txt```
 
-To perform a benchmark run using the files in the ```data``` directory: 
+To perform a benchmark, run: 
 
-```python -m benchmark```
+```python -m bench```
 
 Command line options:
 
@@ -18,10 +18,6 @@ Command line options:
 - `-u`/`--units`: The number of units in the MLP\'s hidden layer. A list of integers separated by spaces can also be
 provided to specify additional layers. (default: 100)
 - `-e`/`--epochs`: The number of epochs to spend training the model. (default: 10)
-- `-d`/`--delay`: The gap length in timesteps between predictions. (default: 1)
-- `-i`/`--iterations`: The number of iterations to use on each dataset in the `benchmark_data` directory.
-(default: 10000)
-- `-t`/`--time-to-run`: The length of time in seconds to predict on. (default: 5.0)
 - `-g`/`--graphs`: Providing this argument will show a plot after each dataset processed.
 
 Note the data must be of `.csv` format and have two columns named `Time` and `Observation` for this script to work

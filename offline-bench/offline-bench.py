@@ -1,13 +1,12 @@
-# This script benchmarks an MLP offline using our experimental datasets to make baseline comparisons.
 import argparse
-import os
 import tensorflow as tf
 import pandas as pd
 import numpy as np
 from math import sqrt
 
-# Magic numbers
-DATASET_SIZE = 5.0  # number of seconds of total data (train + test) to use
+# Magic values
+FILE = '1S_1STD.csv'  # Dataset to use in data/ directory
+DATASET_SIZE = 1.0  # number of seconds of total data (train + test) to use
 TRAIN_SPLIT = 0.4  # the proportion of data to use for training
 
 
@@ -41,32 +40,27 @@ def gen_windows(time_series, history_length, forecast_length, split):
 def main():
     args = parse_args()
 
-    # Train/eval on each dataset
-    data_dir = '../data/'
-    for file in os.listdir(data_dir):
-        # Read in first 5 seconds of data using pandas as a numpy array
-        ts = pd.read_csv(data_dir + file).query(f'Time <= {DATASET_SIZE}')[['Observation']].values
+    # Read in data using pandas as a numpy array
+    ts = pd.read_csv('../data/' + FILE).query(f'Time <= {DATASET_SIZE}')[['Observation']].values
 
-        # Process data into tf.data.Dataset objects
-        train, test = gen_windows(ts, args.history_length, args.forecast_length, TRAIN_SPLIT)
-        train_ds = tf.data.Dataset.from_tensor_slices(train)
-        test_ds = tf.data.Dataset.from_tensor_slices(test)
+    # Process data into tf.data.Dataset objects
+    train, test = gen_windows(ts, args.history_length, args.forecast_length, TRAIN_SPLIT)
+    train_ds = tf.data.Dataset.from_tensor_slices(train)
+    test_ds = tf.data.Dataset.from_tensor_slices(test)
 
-        # Compile, train, evaluate MLP
-        model = tf.keras.Sequential()
-        for u in args.units:
-            model.add(tf.keras.layers.Dense(u, activation='relu'))
-        model.add(tf.keras.layers.Dense(1))
-        model.compile(optimizer='adam', loss='mse')
+    # Compile, train, evaluate MLP
+    model = tf.keras.Sequential()
+    for u in args.units:
+        model.add(tf.keras.layers.Dense(u, activation='relu'))
+    model.add(tf.keras.layers.Dense(1))
+    model.compile(optimizer='adam', loss='mse')
 
-        model.fit(train_ds, epochs=args.epochs, verbose=0)
+    model.fit(train_ds, epochs=args.epochs, verbose=0)
 
-        rmse = sqrt(model.evaluate(test_ds, verbose=0))
+    rmse = sqrt(model.evaluate(test_ds, verbose=0))
 
-        # Log output
-        n, sd = file[:(len(file) - 4)].split("_")
-        print(f'{n[:(len(n) - 1)]},{sd[:(len(sd) - 3)]},{args.history_length},{args.forecast_length},{args.units},'
-              f'{args.epochs},{rmse}')
+    # Log output
+    print(f'{args.history_length},{args.forecast_length},{args.units},{args.epochs},{rmse}')
 
 
 if __name__ == '__main__':

@@ -2,5 +2,5 @@
 
 module load python3/anaconda/2019.10
 source activate /work/ishrat/conda_env
-python3 -m benchmark $@
+python3 -m bench $@
 source deactivate

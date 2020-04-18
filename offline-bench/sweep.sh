@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --job-name=offlinemlp
-#SBATCH -n 10
+#SBATCH -n 16
 #SBATCH -o py_out%j.out
 #SBATCH -e py_err%j.err
 
-echo 'Sinusoids,Standard Deviation,History Length,Forecast Length,Units,Epochs,Loss'
+echo 'History Length,Forecast Length,Units,Epochs,Loss'
 
 # forecast length
 for f in {10..100..10}; do
@@ -14,7 +14,7 @@ for f in {10..100..10}; do
     for u in {20..200..20}; do
       # epochs
       for e in {1..10}; do
-        srun -n 10 --exclusive run.sh -f $f -l $l -e $e -u $u
+        srun -n 1 -c 16 --exclusive run.sh -f $f -l $l -e $e -u $u >> offline-results.csv &
       done
     done
   done
