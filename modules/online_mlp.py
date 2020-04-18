@@ -55,11 +55,11 @@ class OnlineMLP:
             target = np.reshape(np.array(self._buffer[-1]), (1, 1))
             self._model.fit(train, target, epochs=self._epochs, verbose=0)
 
-            # Make prediction at pred_length
+            # Make prediction at forecast_length
             pred = self._model.predict(np.reshape(np.array(self._buffer[self._forecast_length:]),
                                                   (1, self._history_length))).item()
 
-            # Move buffer forward by the period
+            # Move buffer forward by the delay
             self._buffer = self._buffer[self._delay:]
 
             return pred
