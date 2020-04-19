@@ -41,7 +41,7 @@ def main():
     args = parse_args()
 
     # Read in data using pandas as a numpy array
-    ts = pd.read_csv('../data/' + FILE).query(f'Time <= {DATASET_SIZE}')[['Observation']].values
+    ts = pd.read_csv('../data/' + FILE).query('Time <= ' + str(DATASET_SIZE))[['Observation']].values
 
     # Process data into tf.data.Dataset objects
     train, test = gen_windows(ts, args.history_length, args.forecast_length, TRAIN_SPLIT)
