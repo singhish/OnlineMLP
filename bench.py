@@ -7,7 +7,7 @@ from math import sqrt
 
 # Magic values
 FILE = '1S_1STD.csv'  # Dataset to use in data/ directory
-DATASET_SIZE = 1.0  # number of seconds of dataset to train on
+DATASET_SIZE = 1.0  # number of seconds of total data (train + test) to use
 DELAY = 1  # gap length in timesteps between predictions
 
 
@@ -43,7 +43,7 @@ def main():
     y_label_loss = 'Loss'
 
     # Load dataset/initialize dataframes
-    df = pd.read_csv('data/' + FILE).query(f'Time <= {DATASET_SIZE}')[['Time', 'Observation']]  # Original time series data
+    df = pd.read_csv('data/' + FILE).query(f'Time <= {DATASET_SIZE}')[['Time', 'Observation']]  # Original data
     obs_df = pd.DataFrame(columns=[iter_label, x_label, y_label_obs])  # Keeps track of current observations
     pred_df = pd.DataFrame(columns=[iter_label, x_label, y_label_pred])  # Keeps track of MLP's predictions
     loss_df = pd.DataFrame(columns=[iter_label, x_label, y_label_loss])  # Stores MLP's rmse over time
