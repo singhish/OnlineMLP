@@ -7,7 +7,7 @@ from math import sqrt
 
 # Magic values
 FILE = '1S_1STD.csv'  # Dataset to use in data/ directory
-DATASET_SIZE = 1.0  # number of seconds of total data (train + test) to use
+DATASET_SIZE = 1.0  # number of seconds of dataset to train on
 DELAY = 1  # gap length in timesteps between predictions
 
 
@@ -43,7 +43,7 @@ def main():
     y_label_loss = 'Loss'
 
     # Load dataset/initialize dataframes
-    df = pd.read_csv('data/' + FILE)[['Time', 'Observation']]  # Original time series data
+    df = pd.read_csv('data/' + FILE).query(f'Time <= {DATASET_SIZE}')[['Time', 'Observation']]  # Original time series data
     obs_df = pd.DataFrame(columns=[iter_label, x_label, y_label_obs])  # Keeps track of current observations
     pred_df = pd.DataFrame(columns=[iter_label, x_label, y_label_pred])  # Keeps track of MLP's predictions
     loss_df = pd.DataFrame(columns=[iter_label, x_label, y_label_loss])  # Stores MLP's rmse over time
@@ -53,7 +53,7 @@ def main():
     rmse = -1  # Stores the current rmse of the model
     iteration = 0  # Keeps track of the current training iteration
     delta = df['Time'].values[1] - df['Time'].values[0]  # The approximate time step between observations
-    for row in df.query(f'Time < {DATASET_SIZE}').itertuples():
+    for row in df.itertuples():
         # Get current time and acceleration values
         time = row[1]
         accel = row[2]
