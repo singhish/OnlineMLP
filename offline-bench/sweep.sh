@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=offlinemlp
-#SBATCH -n 1
+#SBATCH -n 500
 #SBATCH -o py_out%j.out
 #SBATCH -e py_err%j.err
 #SBATCH --mail-user=ishrat@email.sc.edu
@@ -17,9 +17,9 @@ for f in {10..100..10}; do
       # epochs
       for e in {1..10}; do
         # train length
-        for t in {0.1..0.5}; do
+        for t in 0.1 0.2 0.3 0.4 0.5; do
           (( i=i%1 )); (( i++==0 )) && wait
-          srun -n 1 -c 1 --exclusive run.sh -f $f -l $l -e $e -u $u >> offline-results.csv &
+          srun -n 1 -c 1 --exclusive run.sh -f $f -l $l -e $e -u $u -t $t >> offline-results.csv &
         done
       done
     done
