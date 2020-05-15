@@ -1,20 +1,20 @@
 import argparse
 import pandas as pd
 from modules.online_mlp import OnlineMLP
-from matplotlib import pyplot as plt
 from sklearn.metrics import mean_squared_error
 from math import sqrt
 
 # Magic values
 FILE = '1S_1STD.csv'  # Dataset to use in data/ directory
-DATASET_SIZE = 1.0  # number of seconds of total data (train + test) to use
+DATASET_SIZE = 2.0  # number of seconds of total data (train + test) to use
 DELAY = 1  # gap length in timesteps between predictions
+N_RMSES = 5  # total number of rmse measurements to report for plotting, evenly spaced across dataset
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Online MLP Benchmark')
 
-    # Parameters -- for grid searching on HPC clusters
+    # Parameters
     parser.add_argument('-l', '--history-length', type=int, default=20,
                         help='The number of past timesteps to use for making a prediction. (default: 20)')
     parser.add_argument('-f', '--forecast-length', type=int, default=5,
@@ -24,10 +24,6 @@ def parse_args():
                              'can also be provided to specify additional layers. (default: 10)')
     parser.add_argument('-e', '--epochs', type=int, default=10,
                         help='The number of epochs to spend training the model. (default: 10)')
-
-    # Other options useful for local testing
-    parser.add_argument('-g', '--graphs', action='store_true',
-                        help='Providing this argument will show a plot after each dataset processed.')
 
     return parser.parse_args()
 
@@ -49,57 +45,42 @@ def main():
     loss_df = pd.DataFrame(columns=[iter_label, x_label, y_label_loss])  # Stores MLP's rmse over time
 
     # Start online training
-    mlp = OnlineMLP(args.history_length, args.forecast_length, DELAY, args.units, args.epochs)
-    rmse = -1  # Stores the current rmse of the model
+    omlp = OnlineMLP(args.history_length, args.forecast_length, DELAY, args.units, args.epochs)
+    curr_rmse = -1  # Stores the current rmse of the model
     iteration = 0  # Keeps track of the current training iteration
     delta = df['Time'].values[1] - df['Time'].values[0]  # The approximate time step between observations
+    n_rows = df.shape[0]  # Total number of rows in dataset
+    rmses = []
     for row in df.itertuples():
         # Get current time and acceleration values
         time = row[1]
         accel = row[2]
         obs_df.loc[len(obs_df)] = [iteration, time, accel]
 
-        # Perform a training iteration on the MLP
-        pred_accel = mlp.advance_iteration(accel)
+        # Perform a training iteration on MLP
+        pred_accel = omlp.advance_iteration(accel)
 
-        # If MLP's buffer contained enough observations to make a prediction, attempt to calculate its rmse
+        # If MLP's buffer contained enough observations to make a prediction, attempt to update rmse
         if pred_accel is not None:
             pred_df.loc[len(pred_df)] = [iteration + args.forecast_length,
                                          time + delta * args.forecast_length,
                                          pred_accel]
-            # Perform inner join on obs_df and pred_df to sync up MLP's rmse values
-            merged_series = pd.merge_ordered(obs_df, pred_df, on=iter_label, how='inner')
-            if not merged_series.empty:
-                rmse = sqrt(mean_squared_error(merged_series[y_label_obs].values,
-                                               merged_series[y_label_pred].values))
-                loss_df.loc[len(loss_df)] = [iteration, time, rmse]
+            # Perform inner join on obs_df and pred_df to sync MLP's rmse values
+            synced_df = pd.merge_ordered(obs_df, pred_df, on=iter_label, how='inner')
+            if not synced_df.empty:
+                curr_rmse = sqrt(mean_squared_error(synced_df[y_label_obs].values,
+                                                    synced_df[y_label_pred].values))
+                loss_df.loc[len(loss_df)] = [iteration, time, curr_rmse]
+
+        # If current iteration's rmse is to be reported, save it for logging
+        if iteration + 1 in [int(n_rows*((i+1)/N_RMSES)) for i in range(N_RMSES)]:
+            rmses.append(curr_rmse)
 
         # Increment iteration count
         iteration += 1
 
     # Log output
-    print(f'{args.history_length},{args.forecast_length},{args.units},{args.epochs},{rmse}')
-
-    # Plot data if --graphs option is provided
-    if args.graphs:
-        fig, axs = plt.subplots(2, 1, tight_layout=True)
-        fig.set_size_inches(6, 8)
-
-        title_pred = f'Online MLP Training Results\nHistory Length={args.history_length}, \
-Forecast Length={args.forecast_length}, Delay={DELAY},\nUnits={args.units}, Epochs={args.epochs}'
-        title_loss = 'Loss (rMSE)'
-
-        axs[0].set_title(title_pred)
-        obs_df.plot(ax=axs[0], x=x_label, y=y_label_obs, color='silver', style='--')
-        pred_df.plot(ax=axs[0], x=x_label, y=y_label_pred, color='red')
-        axs[0].set_xlim(xmin=0)
-
-        axs[1].set_title(title_loss)
-        loss_df.plot(ax=axs[1], x=x_label, y=y_label_loss, color='magenta')
-        axs[1].set_xlim(xmin=0, xmax=axs[0].get_xlim()[1])
-        axs[1].set_ylim(ymin=0)
-
-        plt.show()
+    print(f'{args.history_length},{args.forecast_length},{args.units[0]},{args.epochs},{",".join(map(str, rmses))}')
 
 
 if __name__ == '__main__':

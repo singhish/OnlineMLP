@@ -3,4 +3,9 @@ __pycache__/
 modules/__pycache__/
 py_out*.out
 py_err*.err
+offline-bench/py_out*.out
+offline-bench/py_err*.err
 .ipynb_checkpoints/
+*.ipynb
+results.csv
+offline-bench/offline-results.csv

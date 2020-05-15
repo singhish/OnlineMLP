@@ -16,9 +16,8 @@ Command line options:
 - `-l`/`--history-length`: The number of past timesteps to use for making a prediction. (default: 20)
 - `-f`/`--forecast-length`: The number of timesteps ahead to make a prediction at. (default: 5)
 - `-u`/`--units`: The number of units in the MLP\'s hidden layer. A list of integers separated by spaces can also be
-provided to specify additional layers. (default: 100)
+provided to specify additional layers. (default: 10)
 - `-e`/`--epochs`: The number of epochs to spend training the model. (default: 10)
-- `-g`/`--graphs`: Providing this argument will show a plot after each dataset processed.
 
 Note the data must be of `.csv` format and have two columns named `Time` and `Observation` for this script to work
 properly.

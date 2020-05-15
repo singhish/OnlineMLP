@@ -6,7 +6,7 @@ from math import sqrt
 
 # Magic values
 FILE = '1S_1STD.csv'  # Dataset to use in data/ directory
-DATASET_SIZE = 1.0  # number of seconds of total data (train + test) to use
+DATASET_SIZE = 2.0  # number of seconds of total data (train + test) to use
 
 
 def parse_args():
@@ -60,7 +60,7 @@ def main():
     rmse = sqrt(model.evaluate(test_ds, verbose=0))
 
     # Log output
-    print(f'{args.history_length},{args.forecast_length},{args.units},{args.epochs},{args.train_length},{rmse}')
+    print(f'{args.history_length},{args.forecast_length},{args.units[0]},{args.epochs},{args.train_length},{rmse}')
 
 
 if __name__ == '__main__':
