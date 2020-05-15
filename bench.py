@@ -8,7 +8,7 @@ from math import sqrt
 FILE = '1S_1STD.csv'  # Dataset to use in data/ directory
 DATASET_SIZE = 2.0  # number of seconds of total data (train + test) to use
 DELAY = 1  # gap length in timesteps between predictions
-N_RMSES = 5  # total number of rmse measurements to report for plotting, evenly spaced across dataset
+N_RMSES = 5  # total number of intermediate rmse measurements to report, evenly spaced across dataset
 
 
 def parse_args():

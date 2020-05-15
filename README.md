@@ -1,7 +1,10 @@
 # OnlineMLP
 ![](media/demo.gif)
 
-A wrapper class for Keras-based multilayer perceptrons (MLPs) for training them online (e.g. for making live forecasts on real-time data streams).
+A continually trained multilayer perceptron (MLP) model for performing real-time predictions on non-stationary time
+series datasets, powered by Keras. [Funded
+by the National Science Foundation](https://www.nsf.gov/awardsearch/showAward?AWD_ID=1937535&HistoricalAwards=false).
+
 
 To install dependencies (preferably in something like a `venv` or `conda` environment):
 
@@ -10,6 +13,10 @@ To install dependencies (preferably in something like a `venv` or `conda` enviro
 To perform a benchmark, run: 
 
 ```python -m bench```
+
+This will output a comma-separated list of 9 values. The first 4 consist of the model's configuration corresponding to
+the ordering of their command line options shown below, and the last 5 are the model's intermediary RMSE scores taken at
+1/5, 2/5, 3/5, 4/5, and the end of the dataset.
 
 Command line options:
 
