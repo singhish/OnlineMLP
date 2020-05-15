@@ -36,7 +36,8 @@ To carry out a parameter sweep on an HPC cluster that supports `slurm` (like, fo
 ```sbatch sweep.sh```
 
 changing any parameter bounds by directly modifying `sweep.sh` as needed. To benchmark an offline MLP for means of
-comparison, run `sbatch offline-bench/sweep.sh`.
+comparison, `cd` into `offline-bench` and run `sbatch offline-sweep.sh`. The corresponding output files are
+`results.csv` and `offline-results.csv`, respectively.
 
 ---
 
