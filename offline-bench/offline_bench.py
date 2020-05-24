@@ -7,6 +7,7 @@ from math import sqrt
 # Magic values
 FILE = '1S_1STD.csv'  # Dataset to use in data/ directory
 DATASET_SIZE = 2.0  # number of seconds of total data (train + test) to use
+TEST_LENGTH = 0.8
 
 
 def parse_args():
@@ -18,12 +19,13 @@ def parse_args():
     parser.add_argument('-u', '--units', type=int, default=[10], nargs='*')
     parser.add_argument('-e', '--epochs', type=int, default=10)
     parser.add_argument('-t', '--train-length', type=float, default=0.4)
+    parser.add_argument('-s', '--save-to-csv', action='store_true')
 
     return parser.parse_args()
 
 
 # Generates train/test history windows and their corresponding forecast targets from time series data
-def gen_windows(time_series, history_length, forecast_length, train_length, test_length=0.8):
+def gen_windows(time_series, history_length, forecast_length, train_length, test_length=TEST_LENGTH):
     train_windows, train_targets, test_windows, test_targets = [], [], [], []
     for i in range(len(time_series) - history_length - forecast_length):
         window = time_series[i:(i + history_length)]
@@ -31,7 +33,7 @@ def gen_windows(time_series, history_length, forecast_length, train_length, test
         if i < int(train_length * len(time_series)):
             train_windows.append(window)
             train_targets.append(target)
-        elif i >= int(test_length * len(time_series)):
+        elif i + history_length + forecast_length >= int(test_length * len(time_series)):
             test_windows.append(window)
             test_targets.append(target)
     return (np.array(train_windows), np.array(train_targets)), (np.array(test_windows), np.array(test_targets))
@@ -61,6 +63,10 @@ def main():
 
     # Log output
     print(f'{args.history_length},{args.forecast_length},{args.units[0]},{args.epochs},{args.train_length},{rmse}')
+
+    # TODO: save predictions on evaluation data to .csv if -s is specified
+    if args.save_to_csv:
+        pass
 
 
 if __name__ == '__main__':

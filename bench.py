@@ -24,6 +24,8 @@ def parse_args():
                              'can also be provided to specify additional layers. (default: 10)')
     parser.add_argument('-e', '--epochs', type=int, default=10,
                         help='The number of epochs to spend training the model. (default: 10)')
+    parser.add_argument('-s', '--save-to-csv', action='store_true',
+                        help='Optional flag that saves the observed and predicted results to .csv files if specified.')
 
     return parser.parse_args()
 
@@ -81,6 +83,11 @@ def main():
 
     # Log output
     print(f'{args.history_length},{args.forecast_length},{args.units[0]},{args.epochs},{",".join(map(str, rmses))}')
+
+    # Save obs_df and pred_df to .csv files, if -s arg is specified
+    if args.save_to_csv:
+        obs_df.to_csv('obs.csv')
+        pred_df.to_csv('pred.csv')
 
 
 if __name__ == '__main__':
