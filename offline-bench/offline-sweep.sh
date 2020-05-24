@@ -17,7 +17,7 @@ for f in {10..100..10}; do
       # epochs
       for e in {1..10}; do
         # train length
-        for t in 0.1 0.2 0.3 0.4 0.5; do
+        for t in 0.2 0.4 0.6 0.8; do
           (( i=i%500 )); (( i++==0 )) && wait
           srun -n 1 -c 1 --exclusive offline-run.sh -f $f -l $l -e $e -u $u -t $t >> offline-results.csv &
         done
