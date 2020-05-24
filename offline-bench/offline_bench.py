@@ -7,7 +7,6 @@ from math import sqrt
 # Magic values
 FILE = '1S_1STD.csv'  # Dataset to use in data/ directory
 DATASET_SIZE = 2.0  # number of seconds of total data (train + test) to use
-TEST_LENGTH = 0.8
 
 
 def parse_args():
@@ -25,18 +24,20 @@ def parse_args():
 
 
 # Generates train/test history windows and their corresponding forecast targets from time series data
-def gen_windows(time_series, history_length, forecast_length, train_length, test_length=TEST_LENGTH):
+def gen_windows(time_series, history_length, forecast_length, train_length):
     train_windows, train_targets, test_windows, test_targets = [], [], [], []
     for i in range(len(time_series) - history_length - forecast_length):
+        target_idx = i + history_length + forecast_length
         window = time_series[i:(i + history_length)]
-        target = time_series[i + history_length + forecast_length]
-        if i < int(train_length * len(time_series)):
+        target = time_series[target_idx]
+        if target_idx < int(train_length * len(time_series)):
             train_windows.append(window)
             train_targets.append(target)
-        elif i + history_length + forecast_length >= int(test_length * len(time_series)):
+        else:
             test_windows.append(window)
             test_targets.append(target)
-    return (np.array(train_windows), np.array(train_targets)), (np.array(test_windows), np.array(test_targets))
+    return np.array(train_windows).reshape(len(train_windows), history_length), np.array(train_targets), \
+           np.array(test_windows).reshape(len(test_windows), history_length), np.array(test_targets)
 
 
 def main():
@@ -46,27 +47,41 @@ def main():
     ts = pd.read_csv('../data/' + FILE).query(f'Time <= {DATASET_SIZE}')[['Observation']].values
 
     # Process data into tf.data.Dataset objects
-    train, test = gen_windows(ts, args.history_length, args.forecast_length, args.train_length)
-    train_ds = tf.data.Dataset.from_tensor_slices(train)
-    test_ds = tf.data.Dataset.from_tensor_slices(test)
+    train_windows, train_targets, test_windows, test_targets = \
+        gen_windows(ts, args.history_length, args.forecast_length, args.train_length)
 
     # Compile, train, evaluate MLP
     model = tf.keras.Sequential()
     for u in args.units:
-        model.add(tf.keras.layers.Dense(u, activation='relu'))
+        model.add(tf.keras.layers.Dense(u, activation='relu', input_dim=args.history_length))
     model.add(tf.keras.layers.Dense(1))
     model.compile(optimizer='adam', loss='mse')
 
-    model.fit(train_ds, epochs=args.epochs, verbose=0)
+    model.fit(train_windows, train_targets, epochs=args.epochs, verbose=0)
 
-    rmse = sqrt(model.evaluate(test_ds, verbose=0))
+    rmse = sqrt(model.evaluate(test_windows, test_targets, verbose=0))
 
     # Log output
     print(f'{args.history_length},{args.forecast_length},{args.units[0]},{args.epochs},{args.train_length},{rmse}')
 
-    # TODO: save predictions on evaluation data to .csv if -s is specified
+    # Save predictions on evaluation data to a .csv file if -s is specified
     if args.save_to_csv:
-        pass
+        pred_df = pd.read_csv('../data/' + FILE) \
+            .query(f'Time > {args.train_length * DATASET_SIZE} and Time <= {DATASET_SIZE}')[['Time', 'Observation']]
+        delta = pred_df['Time'].values[1] - pred_df['Time'].values[0]
+        pred_df['Time'] = pred_df['Time'].map(lambda v, d=delta, f=args.forecast_length: v + d * f)
+
+        predictions = []
+        for window in test_windows:
+            predictions.append(model.predict(window.reshape(1, args.history_length)).item())
+
+        x_label = 'Time (s)'
+        y_label = 'Predicted Acceleration (Offline)'
+
+        pred_df = pred_df.assign(P=predictions[:len(pred_df['Time'].values)]) \
+                         .rename(columns={'Time': x_label, 'P': y_label})
+
+        pred_df[[x_label, y_label]].to_csv('offline-pred.csv')
 
 
 if __name__ == '__main__':
