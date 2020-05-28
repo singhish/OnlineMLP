@@ -46,8 +46,10 @@ def main():
     pred_df = pd.DataFrame(columns=[iter_label, x_label, y_label_pred])  # Keeps track of MLP's predictions
     loss_df = pd.DataFrame(columns=[iter_label, x_label, y_label_loss])  # Stores MLP's rmse over time
 
-    # Start online training
+    # Initialize online MLP model
     omlp = OnlineMLP(args.history_length, args.forecast_length, DELAY, args.units, args.epochs)
+
+    # Start online training
     curr_rmse = -1  # Stores the current rmse of the model
     iteration = 0  # Keeps track of the current training iteration
     delta = df['Time'].values[1] - df['Time'].values[0]  # The approximate time step between observations

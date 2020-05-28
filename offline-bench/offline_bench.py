@@ -50,21 +50,23 @@ def main():
     train_windows, train_targets, test_windows, test_targets = \
         gen_windows(ts, args.history_length, args.forecast_length, args.train_length)
 
-    # Compile, train, evaluate MLP
+    ##################################################
+    ### OFFLINE MLP MODEL WE ARE COMPARING AGAINST ###
     model = tf.keras.Sequential()
     for u in args.units:
         model.add(tf.keras.layers.Dense(u, activation='relu', input_dim=args.history_length))
     model.add(tf.keras.layers.Dense(1))
     model.compile(optimizer='adam', loss='mse')
+    ##################################################
 
+    # Train and evaluate offline MLP
     model.fit(train_windows, train_targets, epochs=args.epochs, verbose=0)
-
     rmse = sqrt(model.evaluate(test_windows, test_targets, verbose=0))
 
     # Log output
     print(f'{args.history_length},{args.forecast_length},{args.units[0]},{args.epochs},{args.train_length},{rmse}')
 
-    # Save predictions on evaluation data to a .csv file if -s is specified
+    # Save predictions on evaluation data to a .csv file if -s arg is specified
     if args.save_to_csv:
         pred_df = pd.read_csv('../data/' + FILE) \
             .query(f'Time > {args.train_length * DATASET_SIZE} and Time <= {DATASET_SIZE}')[['Time', 'Observation']]
@@ -79,7 +81,7 @@ def main():
         y_label = 'Predicted Acceleration (Offline)'
 
         pred_df = pred_df.assign(P=predictions[:len(pred_df['Time'].values)]) \
-                         .rename(columns={'Time': x_label, 'P': y_label})
+            .rename(columns={'Time': x_label, 'P': y_label})
 
         pred_df[[x_label, y_label]].to_csv('offline-pred.csv')
 
