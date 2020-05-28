@@ -5,10 +5,9 @@ from sklearn.metrics import mean_squared_error
 from math import sqrt
 
 # Magic values
-FILE = '1S_1STD.csv'  # dataset to use in data/ directory
 DATASET_SIZE = 5.0  # number of seconds of total data (train + test) to use
-DELAY = 1  # gap length in timesteps between predictions
 N_INTERVALS = 10  # number of segments of dataset over which to calculate intermediate loss
+DELAY = 1  # gap length in timesteps between predictions
 
 
 def parse_args():
@@ -27,11 +26,16 @@ def parse_args():
     parser.add_argument('-s', '--save-to-csv', action='store_true',
                         help='Optional flag that saves the observed and predicted results to .csv files if specified.')
 
+    # Specify dataset to use in data/ directory
+    parser.add_argument('--s', type=int, default=1)
+    parser.add_argument('--std', type=int, default=1)
+
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
+    filename = f'data/{args.s}S_{args.std}STD.csv'
 
     # Dataframe column labels
     iter_label = 'Iteration'
@@ -42,7 +46,7 @@ def main():
     interval_label = 'Interval'
 
     # Load dataset/initialize dataframes
-    df = pd.read_csv('data/' + FILE).query(f'Time <= {DATASET_SIZE}')[['Time', 'Observation']]  # Original data
+    df = pd.read_csv(filename).query(f'Time <= {DATASET_SIZE}')[['Time', 'Observation']]  # Original data
     obs_df = pd.DataFrame(columns=[iter_label, x_label, y_label_obs])  # Keeps track of current observations
     pred_df = pd.DataFrame(columns=[iter_label, x_label, y_label_pred])  # Keeps track of MLP's predictions
     loss_df = pd.DataFrame(columns=[iter_label, interval_label, x_label, y_label_loss])  # Stores MLP's rmse over time
@@ -88,14 +92,15 @@ def main():
                 # Log loss for current interval upon reaching end of interval
                 if iteration >= int((interval + 1) * (n_rows / N_INTERVALS)):
                     interval += 1  # increment interval
-                    print(f'{args.history_length},{args.forecast_length},{args.units[0]},{args.epochs},'
-                          f'{interval_name},{curr_rmse}')
+                    print(f'{args.s},{args.std},{args.history_length},{args.forecast_length},{args.units[0]},'
+                          f'{args.epochs},{interval_name},{curr_rmse}')
 
         # Increment iteration count
         iteration += 1
 
     # Log loss for final interval
-    print(f'{args.history_length},{args.forecast_length},{args.units[0]},{args.epochs},{interval_name},{curr_rmse}')
+    print(f'{args.s},{args.std},{args.history_length},{args.forecast_length},{args.units[0]},{args.epochs},'
+          f'{interval_name},{curr_rmse}')
 
     # Save obs_df and pred_df to .csv files, if -s arg is specified
     if args.save_to_csv:

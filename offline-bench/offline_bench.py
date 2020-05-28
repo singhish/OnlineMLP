@@ -6,7 +6,6 @@ import tensorflow as tf
 from math import sqrt
 
 # Magic values
-FILE = '1S_1STD.csv'  # dataset to use in data/ directory
 DATASET_SIZE = 5.0  # number of seconds of total data (train + test) to use
 N_INTERVALS = 10   # number of segments of dataset over which to calculate intermediate loss
 
@@ -20,6 +19,10 @@ def parse_args():
     parser.add_argument('-u', '--units', type=int, default=[10], nargs='*')
     parser.add_argument('-e', '--epochs', type=int, default=10)
     parser.add_argument('-s', '--save-to-csv', action='store_false')
+
+    # Specify dataset to use in data/ directory
+    parser.add_argument('--s', type=int, default=1)
+    parser.add_argument('--std', type=int, default=1)
 
     return parser.parse_args()
 
@@ -44,9 +47,10 @@ def gen_windows(time_series, history_length, forecast_length, train_length, test
 
 def main():
     args = parse_args()
+    filename = f'../data/{args.s}S_{args.std}STD.csv'
 
     # Read in observation data from dataset
-    ts = pd.read_csv('../data/' + FILE).query(f'Time <= {DATASET_SIZE}')[['Observation']].values
+    ts = pd.read_csv(filename).query(f'Time <= {DATASET_SIZE}')[['Observation']].values
     x_label = 'Time (s)'
     y_label = 'Predicted Acceleration (Offline)'
     
@@ -75,13 +79,14 @@ def main():
 
         # Log output
         interval_name = f'{round(train_length - test_length, 1)}_{round(train_length + test_length, 1)}'
-        print(f'{args.history_length},{args.forecast_length},{args.units[0]},{args.epochs},{interval_name},{rmse}')
+        print(f'{args.s},{args.std},{args.history_length},{args.forecast_length},{args.units[0]},{args.epochs},'
+              f'{interval_name},{rmse}')
 
         if args.save_to_csv:
             # Read in temporal data from dataset 
             interval_data_query = \
                 f'{train_length * DATASET_SIZE} <= Time < {(train_length + test_length) * DATASET_SIZE}'
-            interval_df = pd.read_csv('../data/' + FILE).query(interval_data_query)[['Time']]
+            interval_df = pd.read_csv(filename).query(interval_data_query)[['Time']]
             
             # Calculate approximate forecast time shift and apply to dataset
             forecast_time = interval_df['Time'].values[1] - interval_df['Time'].values[0]
