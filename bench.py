@@ -5,10 +5,10 @@ from sklearn.metrics import mean_squared_error
 from math import sqrt
 
 # Magic values
-FILE = '1S_1STD.csv'  # Dataset to use in data/ directory
-DATASET_SIZE = 2.0  # number of seconds of total data (train + test) to use
+FILE = '1S_1STD.csv'  # dataset to use in data/ directory
+DATASET_SIZE = 0.2  # number of seconds of total data (train + test) to use
 DELAY = 1  # gap length in timesteps between predictions
-N_RMSES = 5  # total number of intermediate rmse measurements to report, evenly spaced across dataset
+N_INTERVALS = 10  # number of segments of dataset over which to calculate intermediate loss
 
 
 def parse_args():
@@ -39,22 +39,25 @@ def main():
     y_label_obs = 'Observed Acceleration'
     y_label_pred = 'Predicted Acceleration'
     y_label_loss = 'Loss'
+    interval_label = 'Interval'
 
     # Load dataset/initialize dataframes
     df = pd.read_csv('data/' + FILE).query(f'Time <= {DATASET_SIZE}')[['Time', 'Observation']]  # Original data
     obs_df = pd.DataFrame(columns=[iter_label, x_label, y_label_obs])  # Keeps track of current observations
     pred_df = pd.DataFrame(columns=[iter_label, x_label, y_label_pred])  # Keeps track of MLP's predictions
-    loss_df = pd.DataFrame(columns=[iter_label, x_label, y_label_loss])  # Stores MLP's rmse over time
+    loss_df = pd.DataFrame(columns=[iter_label, interval_label, x_label, y_label_loss])  # Stores MLP's rmse over time
 
     # Initialize online MLP model
     omlp = OnlineMLP(args.history_length, args.forecast_length, DELAY, args.units, args.epochs)
 
     # Start online training
-    curr_rmse = -1  # Stores the current rmse of the model
-    iteration = 0  # Keeps track of the current training iteration
-    delta = df['Time'].values[1] - df['Time'].values[0]  # The approximate time step between observations
-    n_rows = df.shape[0]  # Total number of rows in dataset
-    rmses = []
+    iteration = 0  # keeps track of the current training iteration
+    delta = df['Time'].values[1] - df['Time'].values[0]  # approximate number of time step between observations
+    n_rows = df.shape[0]  # total number of rows in dataset
+    interval = 0  # stores index of current interval rmse is being calculated over
+    interval_name = ''  # stores label of current interval in format '{START_OF_INTERVAL}_{END_OF_INTERVAL}'
+    curr_rmse = -1  # stores current value of rmse in interval
+
     for row in df.itertuples():
         # Get current time and acceleration values
         time = row[1]
@@ -69,22 +72,30 @@ def main():
             pred_df.loc[len(pred_df)] = [iteration + args.forecast_length,
                                          time + delta * args.forecast_length,
                                          pred_accel]
-            # Perform inner join on obs_df and pred_df to sync MLP's rmse values
-            synced_df = pd.merge_ordered(obs_df, pred_df, on=iter_label, how='inner')
-            if not synced_df.empty:
-                curr_rmse = sqrt(mean_squared_error(synced_df[y_label_obs].values,
-                                                    synced_df[y_label_pred].values))
-                loss_df.loc[len(loss_df)] = [iteration, time, curr_rmse]
 
-        # If current iteration's rmse is to be reported, save it for logging
-        if iteration + 1 in [int(n_rows*((i+1)/N_RMSES)) for i in range(N_RMSES)]:
-            rmses.append(curr_rmse)
+            # Perform inner join on obs_df and pred_df to sync MLP's rmse values
+            interval_data_query = f'{int((interval / N_INTERVALS) * n_rows)}' \
+                                  f'<= {iter_label}' \
+                                  f'< {int(((interval + 1) / N_INTERVALS) * n_rows)}'
+            synced_df = pd.merge_ordered(obs_df, pred_df, on=iter_label, how='inner').query(interval_data_query)
+
+            if not synced_df.empty:
+                # Update loss_df
+                interval_name = f'{interval / N_INTERVALS}_{(interval + 1) / N_INTERVALS}'
+                curr_rmse = sqrt(mean_squared_error(synced_df[y_label_obs].values, synced_df[y_label_pred].values))
+                loss_df.loc[len(loss_df)] = [iteration, interval_name, time, curr_rmse]
+
+                # Log loss for current interval upon reaching end of interval
+                if iteration >= int((interval + 1) * (n_rows / N_INTERVALS)):
+                    interval += 1  # increment interval
+                    print(f'{args.history_length},{args.forecast_length},{args.units[0]},{args.epochs},'
+                          f'{interval_name},{curr_rmse}')
 
         # Increment iteration count
         iteration += 1
 
-    # Log output
-    print(f'{args.history_length},{args.forecast_length},{args.units[0]},{args.epochs},{",".join(map(str, rmses))}')
+    # Log loss for final interval
+    print(f'{args.history_length},{args.forecast_length},{args.units[0]},{args.epochs},{interval_name},{curr_rmse}')
 
     # Save obs_df and pred_df to .csv files, if -s arg is specified
     if args.save_to_csv:
