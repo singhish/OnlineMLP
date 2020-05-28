@@ -7,7 +7,7 @@ from math import sqrt
 
 # Magic values
 FILE = '1S_1STD.csv'  # dataset to use in data/ directory
-DATASET_SIZE = 2.0  # number of seconds of total data (train + test) to use
+DATASET_SIZE = 5.0  # number of seconds of total data (train + test) to use
 N_INTERVALS = 10   # number of segments of dataset over which to calculate intermediate loss
 
 
