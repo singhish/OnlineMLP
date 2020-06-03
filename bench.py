@@ -8,27 +8,23 @@ from math import sqrt
 DATASET_SIZE = 5.0  # number of seconds of total data (train + test) to use
 N_INTERVALS = 10  # number of segments of dataset over which to calculate intermediate loss
 DELAY = 1  # gap length in timesteps between predictions
+FORECAST_LENGTH = 1  # fix forecast length to 1 to allow for comparability with other models
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Online MLP Benchmark')
 
     # Parameters
-    parser.add_argument('-l', '--history-length', type=int, default=20,
-                        help='The number of past timesteps to use for making a prediction. (default: 20)')
-    parser.add_argument('-f', '--forecast-length', type=int, default=5,
-                        help='The number of timesteps ahead to make a prediction at. (default: 5)')
-    parser.add_argument('-u', '--units', type=int, default=[10], nargs='*',
-                        help='The number of units in the MLP\'s hidden layer. A list of integers separated by spaces '
-                             'can also be provided to specify additional layers. (default: 10)')
-    parser.add_argument('-e', '--epochs', type=int, default=10,
-                        help='The number of epochs to spend training the model. (default: 10)')
-    parser.add_argument('-s', '--save-to-csv', action='store_true',
-                        help='Optional flag that saves the observed and predicted results to .csv files if specified.')
+    parser.add_argument('-i', '--input-dim', type=int, default=20)
+    parser.add_argument('-u', '--units', type=int, default=[10], nargs='*')
+    parser.add_argument('-e', '--epochs', type=int, default=10)
 
     # Specify dataset to use in data/ directory
     parser.add_argument('--s', type=int, default=1)
     parser.add_argument('--std', type=int, default=1)
+
+    # Other options
+    parser.add_argument('-s', '--save-to-csv', action='store_true')
 
     return parser.parse_args()
 
@@ -52,7 +48,7 @@ def main():
     loss_df = pd.DataFrame(columns=[iter_label, interval_label, x_label, y_label_loss])  # Stores MLP's rmse over time
 
     # Initialize online MLP model
-    omlp = OnlineMLP(args.history_length, args.forecast_length, DELAY, args.units, args.epochs)
+    omlp = OnlineMLP(args.input_dim, FORECAST_LENGTH, DELAY, args.units, args.epochs)
 
     # Start online training
     iteration = 0  # keeps track of the current training iteration
@@ -73,9 +69,7 @@ def main():
 
         # If MLP's buffer contained enough observations to make a prediction, attempt to update rmse
         if pred_accel is not None:
-            pred_df.loc[len(pred_df)] = [iteration + args.forecast_length,
-                                         time + delta * args.forecast_length,
-                                         pred_accel]
+            pred_df.loc[len(pred_df)] = [iteration + FORECAST_LENGTH, time + delta * FORECAST_LENGTH, pred_accel]
 
             # Perform inner join on obs_df and pred_df to sync MLP's rmse values
             interval_data_query = f'{int((interval / N_INTERVALS) * n_rows)}' \
@@ -92,15 +86,14 @@ def main():
                 # Log loss for current interval upon reaching end of interval
                 if iteration >= int((interval + 1) * (n_rows / N_INTERVALS)):
                     interval += 1  # increment interval
-                    print(f'{args.s},{args.std},{args.history_length},{args.forecast_length},{args.units[0]},'
-                          f'{args.epochs},{interval_name},{curr_rmse}')
+                    print(f'{args.s},{args.std},{args.input_dim},{args.units[0]},{args.epochs},{interval_name},'
+                          f'{curr_rmse}')
 
         # Increment iteration count
         iteration += 1
 
     # Log loss for final interval
-    print(f'{args.s},{args.std},{args.history_length},{args.forecast_length},{args.units[0]},{args.epochs},'
-          f'{interval_name},{curr_rmse}')
+    print(f'{args.s},{args.std},{args.input_dim},{args.units[0]},{args.epochs},{interval_name},{curr_rmse}')
 
     # Save obs_df and pred_df to .csv files, if -s arg is specified
     if args.save_to_csv:

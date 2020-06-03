@@ -5,12 +5,12 @@ import numpy as np
 
 class OnlineMLP:
 
-    def __init__(self, history_length, forecast_length, delay, units, epochs):
+    def __init__(self, input_dim, forecast_length, delay, units, epochs):
         """
         A wrapper class for Keras-based multilayer perceptrons (MLPs) to facilitate the process of training them online
         (e.g. for making live forecasts on real-time data streams).
 
-        :param history_length: the number of past timesteps to use for making a prediction
+        :param input_dim: the number of past timesteps to use for making a prediction
         :param forecast_length: the number of timesteps ahead to make a prediction at
         :param delay: the gap length in timesteps between predictions
         :param units: a list consisting of the number of units for there to be at each hidden layer of the MLP
@@ -23,7 +23,7 @@ class OnlineMLP:
         # Initialize MLP model
         self._model = Sequential()
         for u in units:
-            self._model.add(Dense(u, activation='relu', input_dim=history_length))
+            self._model.add(Dense(u, activation='relu', input_dim=input_dim))
         self._model.add(Dense(1))
         self._model.compile(optimizer='adam', loss='mse')
 
@@ -31,10 +31,10 @@ class OnlineMLP:
         self._buffer = []
         # As the weights of the MLP are updated as the data stream continues, its training batch size is 1. Hence, the
         # buffer only needs to contain enough observations for 1 training batch and 1 subsequent prediction.
-        self._buffer_capacity = history_length + forecast_length
+        self._buffer_capacity = input_dim + forecast_length
 
         # Save training parameters
-        self._history_length = history_length
+        self._input_dim = input_dim
         self._forecast_length = forecast_length
         self._delay = delay
         self._epochs = epochs
@@ -51,13 +51,13 @@ class OnlineMLP:
 
         if len(self._buffer) == self._buffer_capacity:
             # Train MLP using current "batch" from buffer
-            train = np.reshape(np.array(self._buffer[:self._history_length]), (1, self._history_length))
+            train = np.reshape(np.array(self._buffer[:self._input_dim]), (1, self._input_dim))
             target = np.reshape(np.array(self._buffer[-1]), (1, 1))
             self._model.fit(train, target, epochs=self._epochs, verbose=0)
 
             # Make prediction at forecast_length
             pred = self._model.predict(np.reshape(np.array(self._buffer[self._forecast_length:]),
-                                                  (1, self._history_length))).item()
+                                                  (1, self._input_dim))).item()
 
             # Move buffer forward by the delay
             self._buffer = self._buffer[self._delay:]

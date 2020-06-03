@@ -8,32 +8,34 @@ from math import sqrt
 # Magic values
 DATASET_SIZE = 5.0  # number of seconds of total data (train + test) to use
 N_INTERVALS = 10   # number of segments of dataset over which to calculate intermediate loss
+FORECAST_LENGTH = 1  # fix forecast length to 1 to allow for comparability with other models
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Offline MLP Benchmark')
 
     # Parameters -- same as online benchmark
-    parser.add_argument('-l', '--history-length', type=int, default=20)
-    parser.add_argument('-f', '--forecast-length', type=int, default=5)
+    parser.add_argument('-i', '--input-dim', type=int, default=20)
     parser.add_argument('-u', '--units', type=int, default=[10], nargs='*')
     parser.add_argument('-e', '--epochs', type=int, default=10)
-    parser.add_argument('-s', '--save-to-csv', action='store_false')
 
     # Specify dataset to use in data/ directory
     parser.add_argument('--s', type=int, default=1)
     parser.add_argument('--std', type=int, default=1)
 
+    # Other options
+    parser.add_argument('-s', '--save-to-csv', action='store_true')
+
     return parser.parse_args()
 
 
 # Generates train/test history windows and their corresponding forecast targets from time series data
-def gen_windows(time_series, history_length, forecast_length, train_length, test_length):
+def gen_windows(time_series, input_dim, forecast_length, train_length, test_length):
     assert (train_length + test_length <= 1.0)
     train_windows, train_targets, test_windows, test_targets = [], [], [], []
-    for i in range(len(time_series) - history_length - forecast_length):
-        target_idx = i + history_length + forecast_length
-        window = time_series[i:(i + history_length)]
+    for i in range(len(time_series) - input_dim - forecast_length):
+        target_idx = i + input_dim + forecast_length
+        window = time_series[i:(i + input_dim)]
         target = time_series[target_idx]
         if target_idx < int(train_length * len(time_series)):
             train_windows.append(window)
@@ -41,8 +43,8 @@ def gen_windows(time_series, history_length, forecast_length, train_length, test
         elif int(train_length * len(time_series)) <= target_idx < int((train_length + test_length) * len(time_series)):
             test_windows.append(window)
             test_targets.append(target)
-    return np.array(train_windows).reshape(len(train_windows), history_length), np.array(train_targets), \
-           np.array(test_windows).reshape(len(test_windows), history_length), np.array(test_targets)
+    return np.array(train_windows).reshape(len(train_windows), input_dim), np.array(train_targets), \
+           np.array(test_windows).reshape(len(test_windows), input_dim), np.array(test_targets)
 
 
 def main():
@@ -62,13 +64,13 @@ def main():
 
         # Divide dataset into training/testing data
         train_windows, train_targets, test_windows, test_targets = \
-            gen_windows(ts, args.history_length, args.forecast_length, train_length, test_length)
+            gen_windows(ts, args.input_dim, FORECAST_LENGTH, train_length, test_length)
 
         #########################
         ### OFFLINE MLP MODEL ###
         model = tf.keras.Sequential()
         for u in args.units:
-            model.add(tf.keras.layers.Dense(u, activation='relu', input_dim=args.history_length))
+            model.add(tf.keras.layers.Dense(u, activation='relu', input_dim=args.input_dim))
         model.add(tf.keras.layers.Dense(1))
         model.compile(optimizer='adam', loss='mse')
         #########################
@@ -79,23 +81,22 @@ def main():
 
         # Log output
         interval_name = f'{round(train_length - test_length, 1)}_{round(train_length + test_length, 1)}'
-        print(f'{args.s},{args.std},{args.history_length},{args.forecast_length},{args.units[0]},{args.epochs},'
-              f'{interval_name},{rmse}')
+        print(f'{args.s},{args.std},{args.input_dim},{args.units[0]},{args.epochs},{interval_name},{rmse}')
 
         if args.save_to_csv:
             # Read in temporal data from dataset 
-            interval_data_query = \
-                f'{train_length * DATASET_SIZE} <= Time < {(train_length + test_length) * DATASET_SIZE}'
-            interval_df = pd.read_csv(filename).query(interval_data_query)[['Time']]
+            interval_df = pd.read_csv(filename).query(f'{train_length * DATASET_SIZE}'
+                                                      f'<= Time'
+                                                      f'< {(train_length + test_length) * DATASET_SIZE}')[['Time']]
             
             # Calculate approximate forecast time shift and apply to dataset
             forecast_time = interval_df['Time'].values[1] - interval_df['Time'].values[0]
-            interval_df['Time'] = interval_df['Time'].map(lambda v, d=forecast_time, f=args.forecast_length: v + d * f)
+            interval_df['Time'] = interval_df['Time'].map(lambda v, d=forecast_time, f=FORECAST_LENGTH: v + d * f)
 
             # Determine predictions of offline MLP for test data
             predictions = []
             for window in test_windows:
-                predictions.append(model.predict(window.reshape(1, args.history_length)).item())
+                predictions.append(model.predict(window.reshape(1, args.input_dim)).item())
 
             # Correct size of predictions/interval_df if needed
             if len(predictions) > interval_df.shape[0]:
