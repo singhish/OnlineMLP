@@ -7,8 +7,8 @@ from math import sqrt
 # Magic values
 DATASET_SIZE = 5.0  # number of seconds of total data (train + test) to use
 N_INTERVALS = 10  # number of segments of dataset over which to calculate intermediate loss
-DELAY = 1  # gap length in timesteps between predictions
 FORECAST_LENGTH = 1  # fix forecast length to 1 to allow for comparability with other models
+DELAY = 1  # gap length in timesteps between predictions
 
 
 def parse_args():
