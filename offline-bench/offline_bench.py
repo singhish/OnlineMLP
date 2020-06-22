@@ -15,8 +15,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Offline MLP Benchmark')
 
     # Parameters -- same as online benchmark
-    parser.add_argument('-i', '--input-dim', type=int, default=20)
-    parser.add_argument('-u', '--units', type=int, default=[10], nargs='*')
+    parser.add_argument('-i', '--input-dim', type=int, default=70)
+    parser.add_argument('-u', '--units', type=int, default=[45], nargs='*')
     parser.add_argument('-e', '--epochs', type=int, default=10)
 
     # Specify dataset to use in data/ directory
@@ -54,7 +54,7 @@ def main():
     # Read in observation data from dataset
     ts = pd.read_csv(filename).query(f'Time <= {DATASET_SIZE}')[['Observation']].values
     x_label = 'Time (s)'
-    y_label = 'Predicted Acceleration (Offline)'
+    y_label = 'Predicted Acceleration (Offline MLP)'
     
     pred_df = pd.DataFrame(columns=[x_label, y_label])  # stores predictions for all intervals
 
@@ -112,7 +112,7 @@ def main():
 
     # Save pred_df to .csv file, if -s arg is specified
     if args.save_to_csv:
-        pred_df.to_csv('offline-pred.csv')
+        pred_df.to_csv(f'offline-predictions-{args.s}S-{args.std}STD.csv')
 
 
 if __name__ == '__main__':

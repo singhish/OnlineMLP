@@ -18,11 +18,11 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Online MLP Benchmark')
 
     # Parameters
-    parser.add_argument('-i', '--input-dim', type=int, default=20,
+    parser.add_argument('-i', '--input-dim', type=int, default=50,
                         help="Specifies input dimension for MLP\'s input layer and cell size for LSTM's input layer.")
-    parser.add_argument('-u', '--units', type=int, default=[10], nargs='*',
+    parser.add_argument('-u', '--units', type=int, default=[30], nargs='*',
                         help="List of numbers specifying, in order, number of units in each of MLP's hidden layers.")
-    parser.add_argument('-e', '--epochs', type=int, default=10,
+    parser.add_argument('-e', '--epochs', type=int, default=9,
                         help='Number of epochs to train both MLP and LSTM.')
 
     # Specify dataset to use in data/ directory
@@ -32,7 +32,7 @@ def parse_args():
                         help='Specifies dataset to train on in data/ folder: {--s}S_{--std}STD.csv')
 
     # Other options
-    parser.add_argument('-s', '--save-to-csv', action='store_true',
+    parser.add_argument('-s', '--save-to-csv', action='store_false',
                         help="Saves observed values of dataset and predictions for both models to .csv's if specified.")
 
     return parser.parse_args()
@@ -46,16 +46,16 @@ def main():
     iter_label = 'Iteration'
     x_label = 'Time (s)'
     y_label_obs = 'Observed Acceleration'
-    y_label_pred = 'Predicted Acceleration'
-    y_label_pred_lstm = 'Predicted Acceleration (LSTM)'
-    y_label_loss = 'Loss'
-    y_label_loss_lstm = 'Loss (LSTM)'
+    y_label_pred_mlp = 'Predicted Acceleration (Online MLP)'
+    y_label_pred_lstm = 'Predicted Acceleration (Online LSTM)'
+    y_label_loss = 'Loss (Online MLP)'
+    y_label_loss_lstm = 'Loss (Online LSTM)'
     interval_label = 'Interval'
 
     # Load dataset/initialize dataframes
     df = pd.read_csv(filename).query(f'Time <= {DATASET_SIZE}')[['Time', 'Observation']]  # Original data
     obs_df = pd.DataFrame(columns=[iter_label, x_label, y_label_obs])  # Keeps track of current observations
-    pred_df = pd.DataFrame(columns=[iter_label, x_label, y_label_pred])  # Keeps track of MLP's predictions
+    pred_df = pd.DataFrame(columns=[iter_label, x_label, y_label_pred_mlp])  # Keeps track of MLP's predictions
     loss_df = pd.DataFrame(columns=[iter_label, interval_label, x_label, y_label_loss])  # Stores MLP's rmse over time
     lstm_pred_df = pd.DataFrame(columns=[iter_label, x_label, y_label_pred_lstm])  # Keeps track of LSTM's predictions
     lstm_loss_df = pd.DataFrame(columns=[iter_label, interval_label, x_label, y_label_loss_lstm]) # Stores LSTM's rmses
@@ -135,7 +135,7 @@ def main():
 
             if not synced_df.empty:
                 # Update loss_df
-                curr_rmse = sqrt(mean_squared_error(synced_df[y_label_obs].values, synced_df[y_label_pred].values))
+                curr_rmse = sqrt(mean_squared_error(synced_df[y_label_obs].values, synced_df[y_label_pred_mlp].values))
                 loss_df.loc[len(loss_df)] = [iteration, interval_name, time, curr_rmse]
 
                 # Log loss for current interval upon reaching end of interval
@@ -151,11 +151,20 @@ def main():
     print(f'{args.s},{args.std},{args.input_dim},{args.units[0]},{args.epochs},{interval_name},'
           f'{curr_rmse},{lstm_curr_rmse}')
 
-    # Save obs_df, pred_df, and lstm_pred_df to .csv files if -s arg is specified
+    # Save obs_df, pred_df, and lstm_pred_df to a merged .csv file if -s arg is specified
     if args.save_to_csv:
-        obs_df.to_csv('obs.csv')
-        pred_df.to_csv('pred.csv')
-        lstm_pred_df.to_csv('lstm-pred.csv')
+        pd.merge_ordered(
+            obs_df,
+            pd.merge_ordered(
+                pred_df,
+                lstm_pred_df,
+                on=iter_label,
+                how='outer'
+            ),
+            on=iter_label,
+            how='outer'
+        )[[x_label, y_label_obs, y_label_pred_mlp, y_label_pred_lstm]].to_csv(
+            f'predictions-{args.s}S-{args.std}STD.csv')
 
 
 if __name__ == '__main__':
