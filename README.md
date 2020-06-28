@@ -1,5 +1,5 @@
 # OnlineMLP
-# This project is unmaintained and now lives on at [RTML](https://github.com/singhish/RTML).
+# This project is unmaintained and now lives at [RTML](https://github.com/singhish/RTML).
 
 ![](media/demo.gif)
 
