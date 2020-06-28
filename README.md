@@ -1,4 +1,6 @@
 # OnlineMLP
+# This project is unmaintained and now lives on at [RTML](https://github.com/singhish/RTML).
+
 ![](media/demo.gif)
 
 A continually trained multilayer perceptron (MLP) model for performing real-time predictions on non-stationary time
