@@ -53,7 +53,7 @@ parso==0.6.0
 pickleshare==0.7.5
 prometheus-client==0.7.1
 prompt-toolkit==3.0.3
-protobuf==3.11.2
+protobuf==3.18.3
 Pygments==2.5.2
 pylint==2.4.4
 pyparsing==2.4.6
